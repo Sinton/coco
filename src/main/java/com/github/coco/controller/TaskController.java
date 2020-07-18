@@ -1,5 +1,6 @@
 package com.github.coco.controller;
 
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.LoggerHelper;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/api/task")
 public class TaskController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageTasks(@RequestBody Map<String, Object> params) {
         String serviceId = Objects.toString(params.get("serviceId"), null);
@@ -42,11 +44,12 @@ public class TaskController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, tasks));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取调度任务列表失败");
+            LoggerHelper.fmtError(getClass(), e, "获取调度任务列表失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "获取调度任务失败");
         }
     }
 
+    @WebLog
     @PostMapping(value = "/logs")
     public Map<String, Object> getTaskLog(@RequestBody Map<String, Object> params) {
         String taskId = Objects.toString(params.get("taskId"), null);
@@ -65,7 +68,7 @@ public class TaskController extends BaseController {
                                           .readFully();
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, logs);
             } catch (Exception e) {
-                LoggerHelper.fmtError(this.getClass(), e, "获取调度任务日志");
+                LoggerHelper.fmtError(getClass(), e, "获取调度任务日志");
                 return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
             }
         } else {

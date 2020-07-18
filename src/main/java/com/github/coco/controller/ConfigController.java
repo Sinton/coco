@@ -23,6 +23,7 @@ import java.util.Map;
 @RequestMapping(value = "/api/config")
 public class ConfigController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/create")
     public Map<String, Object> createConfig(@RequestBody Map<String, Object> params) {
         String name = params.getOrDefault("name", null).toString();
@@ -36,11 +37,12 @@ public class ConfigController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.createConfig(configSpec));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "创建容器配置项失败");
+            LoggerHelper.fmtError(getClass(), e, "创建容器配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeConfig(@RequestBody Map<String, Object> params) {
         String configId = params.getOrDefault("configId", null).toString();
@@ -48,11 +50,12 @@ public class ConfigController extends BaseController {
             dockerClient.deleteConfig(configId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除配置项成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "删除容器配置项失败");
+            LoggerHelper.fmtError(getClass(), e, "删除容器配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/update")
     public Map<String, Object> updateConfig(@RequestBody Map<String, Object> params) {
         String configId = params.getOrDefault("configId", null).toString();
@@ -68,7 +71,7 @@ public class ConfigController extends BaseController {
             dockerClient.updateConfig(config.id(), config.version().index(), configSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "修改配置项成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "修改容器配置项失败");
+            LoggerHelper.fmtError(getClass(), e, "修改容器配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -83,11 +86,12 @@ public class ConfigController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, configs));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取容器配置项列表失败");
+            LoggerHelper.fmtError(getClass(), e, "获取容器配置项列表失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getConfig(@RequestBody Map<String, Object> params) {
         String configId = params.getOrDefault("configId", null).toString();
@@ -95,7 +99,7 @@ public class ConfigController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.inspectConfig(configId));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取容器配置项失败");
+            LoggerHelper.fmtError(getClass(), e, "获取容器配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }

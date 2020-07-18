@@ -1,6 +1,7 @@
 package com.github.coco.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ContainerActionEnum;
 import com.github.coco.constant.dict.ContainerStatusEnum;
@@ -10,7 +11,10 @@ import com.github.coco.utils.DockerFilterHelper;
 import com.github.coco.utils.EnumHelper;
 import com.github.coco.utils.LoggerHelper;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.Container;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 import lombok.Data;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +45,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/create")
     public Map<String, Object> createContainer(@RequestBody Map<String, Object> params) {
         DeployContainer deployContainer = JSON.parseObject(JSON.toJSONString(params), DeployContainer.class);
@@ -89,6 +94,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeContainer(@RequestBody Map<String, Object> params) {
         String containerId  = Objects.toString(params.get("containerId"), null);
@@ -119,6 +125,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/rename")
     public Map<String, Object> renameContainer(@RequestBody Map<String, Object> params) {
         String containerId = Objects.toString(params.get("containerId"), null);
@@ -142,6 +149,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/updateStatus")
     public Map<String, Object> updateStatus(@RequestBody Map<String, Object> params) {
         String containerId = Objects.toString(params.get("containerId"), null);
@@ -189,6 +197,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageContainers(@RequestBody Map<String, Object> params) {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
@@ -215,6 +224,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getContainerInspect(@RequestBody Map<String, Object> params) {
         String containerId = Objects.toString(params.get("containerId"), null);
@@ -233,6 +243,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/logs")
     public Map<String, Object> getContainerLog(@RequestBody Map<String, Object> params) {
         String containerId = Objects.toString(params.get("containerId"), null);
@@ -286,6 +297,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/stats")
     public Map<String, Object> getContainerStats(@RequestBody Map<String, Object> params) {
         String containerId = Objects.toString(params.get("containerId"), null);
@@ -304,6 +316,7 @@ public class ContainerController extends BaseController {
      * @param params
      * @return
      */
+    @WebLog
     @PostMapping(value = "/top")
     public Map<String, Object> getContainerTop(@RequestBody Map<String, Object> params) {
         String containerId = Objects.toString(params.get("containerId"), null);

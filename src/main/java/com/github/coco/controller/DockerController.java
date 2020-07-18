@@ -22,7 +22,7 @@ public class DockerController extends BaseController {
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, dockerClient.version());
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取Docker版本内容失败");
+            LoggerHelper.fmtError(getClass(), e, "获取Docker版本内容失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -32,7 +32,7 @@ public class DockerController extends BaseController {
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, dockerClient.info());
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取Docker信息失败");
+            LoggerHelper.fmtError(getClass(), e, "获取Docker信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }

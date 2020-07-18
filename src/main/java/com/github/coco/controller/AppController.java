@@ -1,5 +1,6 @@
 package com.github.coco.controller;
 
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +17,7 @@ import java.util.Map;
 @RequestMapping(value = "/api/app")
 public class AppController extends BaseController {
 
+    @WebLog
     @PostMapping("/list")
     public Map<String, Object> getPageApps(@RequestBody Map<String, Object> params) {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());

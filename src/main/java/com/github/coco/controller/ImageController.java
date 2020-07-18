@@ -1,28 +1,23 @@
 package com.github.coco.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
-import com.github.coco.handle.SocketEventHandle;
+import com.github.coco.socket.SocketEventHandle;
 import com.github.coco.utils.DockerFilterHelper;
 import com.github.coco.utils.LoggerHelper;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.ProgressHandler;
-import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.exceptions.ImagePullFailedException;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageSearchResult;
-import com.spotify.docker.client.messages.ProgressMessage;
-import org.apache.commons.io.FileUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +33,7 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/api/image")
 public class ImageController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/pull")
     public void pullImage(@RequestBody Map<String, Object> params) {
         String registry  = Objects.toString(params.get("registry"), "");
@@ -71,6 +67,7 @@ public class ImageController extends BaseController {
         threadPool.shutdown();
     }
 
+    @WebLog
     @PostMapping(value = "/import")
     public Map<String, Object> importImage(MultipartHttpServletRequest request) {
         try {
@@ -84,6 +81,7 @@ public class ImageController extends BaseController {
         }
     }
 
+    @WebLog
     @PostMapping(value = "/export")
     public byte[] exportImage(@RequestBody Map<String, Object> params) {
         String imageFile = "";
@@ -95,6 +93,7 @@ public class ImageController extends BaseController {
         return null;
     }
 
+    @WebLog
     @PostMapping(value = "/tag")
     public Map<String, Object> tagImage(@RequestBody Map<String, Object> params) {
         String imageId       = Objects.toString(params.get("imageId"), "");
@@ -108,6 +107,7 @@ public class ImageController extends BaseController {
         }
     }
 
+    @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeImage(@RequestBody Map<String, Object> params) {
         String imageId  = Objects.toString(params.get("imageId"), "");
@@ -122,6 +122,7 @@ public class ImageController extends BaseController {
         }
     }
 
+    @WebLog
     @PostMapping(value = "/search")
     public Map<String, Object> searchImages(@RequestBody Map<String, Object> params) {
         String imageName = Objects.toString(params.get("imageName"), "");
@@ -134,6 +135,7 @@ public class ImageController extends BaseController {
         }
     }
 
+    @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageImages(@RequestBody Map<String, Object> params) {
         int pageNo   = Integer.parseInt(Objects.toString(params.get("pageNo"), "1"));
@@ -154,6 +156,7 @@ public class ImageController extends BaseController {
         }
     }
 
+    @WebLog
     @PostMapping(value = "/get")
     public Map<String, Object> getImage(@RequestBody Map<String, Object> params) {
         String imageId = Objects.toString(params.get("imageId"), "");
@@ -173,6 +176,7 @@ public class ImageController extends BaseController {
         }
     }
 
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getImageInspect(@RequestBody Map<String, Object> params) {
         String imageId = Objects.toString(params.get("imageId"), "");
@@ -185,6 +189,7 @@ public class ImageController extends BaseController {
         }
     }
 
+    @WebLog
     @PostMapping(value = "/history")
     public Map<String, Object> getImageHistory(@RequestBody Map<String, Object> params) {
         String imageId = Objects.toString(params.get("imageId"), "");

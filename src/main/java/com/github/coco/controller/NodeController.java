@@ -1,5 +1,6 @@
 package com.github.coco.controller;
 
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.LoggerHelper;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/api/node")
 public class NodeController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/delete")
     public Map<String, Object> deleteNode(@RequestBody Map<String, Object> params) {
         String nodeId = params.getOrDefault("nodeId", null).toString();
@@ -29,11 +31,12 @@ public class NodeController extends BaseController {
             dockerClient.deleteNode(nodeId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除集群成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "删除集群节点");
+            LoggerHelper.fmtError(getClass(), e, "删除集群节点");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageNodes(@RequestBody Map<String, Object> params) {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
@@ -43,11 +46,12 @@ public class NodeController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, nodes));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取集群节点列表失败");
+            LoggerHelper.fmtError(getClass(), e, "获取集群节点列表失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getNode(@RequestBody Map<String, Object> params) {
         String nodeId = params.getOrDefault("nodeId", null).toString();
@@ -61,7 +65,7 @@ public class NodeController extends BaseController {
             inspect.put("task", tasks);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, inspect);
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取集群节点信息失败");
+            LoggerHelper.fmtError(getClass(), e, "获取集群节点信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }

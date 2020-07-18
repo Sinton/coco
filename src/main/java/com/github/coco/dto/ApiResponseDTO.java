@@ -43,9 +43,4 @@ public class ApiResponseDTO {
         result.put("data", data);
         return result;
     }
-
-    @Override
-    public String toString() {
-        return "ApiResultDTO{}";
-    }
 }

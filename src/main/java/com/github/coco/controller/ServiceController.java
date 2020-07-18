@@ -1,5 +1,6 @@
 package com.github.coco.controller;
 
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.LoggerHelper;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/api/service")
 public class ServiceController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/create")
     public Map<String, Object> createService(@RequestBody Map<String, Object> params) {
         String serviceName = params.getOrDefault("serviceName", null).toString();
@@ -29,11 +31,12 @@ public class ServiceController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.createService(serviceSpec));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "创建服务失败");
+            LoggerHelper.fmtError(getClass(), e, "创建服务失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeService(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -41,11 +44,12 @@ public class ServiceController extends BaseController {
             dockerClient.removeService(serviceId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "删除服务失败");
+            LoggerHelper.fmtError(getClass(), e, "删除服务失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/scale")
     public Map<String, Object> scale(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -78,11 +82,12 @@ public class ServiceController extends BaseController {
             dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新编排任务调度成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "更新编排任务调度失败");
+            LoggerHelper.fmtError(getClass(), e, "更新编排任务调度失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/resources")
     public Map<String, Object> updateResources(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -90,11 +95,12 @@ public class ServiceController extends BaseController {
             ServiceSpec oldServiceSpec = dockerClient.inspectService(serviceId).spec();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "更新服务失败");
+            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/mount")
     public Map<String, Object> updateMount(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -129,11 +135,12 @@ public class ServiceController extends BaseController {
             dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "更新服务失败");
+            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/network")
     public Map<String, Object> updateNetwork(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -157,11 +164,12 @@ public class ServiceController extends BaseController {
             dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "更新服务失败");
+            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/secret")
     public Map<String, Object> updateSecret(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -170,11 +178,12 @@ public class ServiceController extends BaseController {
             dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "更新服务失败");
+            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/config")
     public Map<String, Object> updateConfig(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -183,11 +192,12 @@ public class ServiceController extends BaseController {
             dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "更新服务失败");
+            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageServices(@RequestBody Map<String, Object> params) {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
@@ -200,11 +210,12 @@ public class ServiceController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, services));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取服务列表失败");
+            LoggerHelper.fmtError(getClass(), e, "获取服务列表失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getService(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -212,11 +223,12 @@ public class ServiceController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.inspectService(serviceId));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取服务信息失败");
+            LoggerHelper.fmtError(getClass(), e, "获取服务信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/logs")
     public Map<String, Object> getServiceLog(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
@@ -235,7 +247,7 @@ public class ServiceController extends BaseController {
                                    .readFully();
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, logs);
             } catch (Exception e) {
-                LoggerHelper.fmtError(this.getClass(), e, "获取服务日志失败");
+                LoggerHelper.fmtError(getClass(), e, "获取服务日志失败");
                 return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
             }
         } else {

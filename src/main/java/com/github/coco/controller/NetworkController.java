@@ -1,6 +1,7 @@
 package com.github.coco.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.DockerFilterHelper;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/api/network")
 public class NetworkController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeNetwork(@RequestBody Map<String, Object> params) {
         String networkId = params.getOrDefault("networkId", null).toString();
@@ -32,11 +34,12 @@ public class NetworkController extends BaseController {
             dockerClient.removeNetwork(networkId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器网络成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "删除容器网络失败");
+            LoggerHelper.fmtError(getClass(), e, "删除容器网络失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "删除容器网络失败");
         }
     }
 
+    @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageNetworks(@RequestBody Map<String, Object> params) {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
@@ -55,11 +58,12 @@ public class NetworkController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, networks));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取容器网络列表失败");
+            LoggerHelper.fmtError(getClass(), e, "获取容器网络列表失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getNetwork(@RequestBody Map<String, Object> params) {
         String networkId = params.getOrDefault("networkId", null).toString();
@@ -67,11 +71,12 @@ public class NetworkController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.inspectNetwork(networkId));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取容器网络信息失败");
+            LoggerHelper.fmtError(getClass(), e, "获取容器网络信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/join")
     public Map<String, Object> connectNetwork(@RequestBody Map<String, Object> params) {
         String containerId = params.getOrDefault("containerId", null).toString();
@@ -80,11 +85,12 @@ public class NetworkController extends BaseController {
             dockerClient.connectToNetwork(containerId, networkId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "加入网络成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "加入网络失败");
+            LoggerHelper.fmtError(getClass(), e, "加入网络失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/leave")
     public Map<String, Object> disconnectNetwork(@RequestBody Map<String, Object> params) {
         String containerId = params.getOrDefault("containerId", null).toString();
@@ -94,7 +100,7 @@ public class NetworkController extends BaseController {
             dockerClient.disconnectFromNetwork(containerId, networkId, force);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "离开网络成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "离开网络失败");
+            LoggerHelper.fmtError(getClass(), e, "离开网络失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }

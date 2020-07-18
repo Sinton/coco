@@ -1,5 +1,6 @@
 package com.github.coco.controller;
 
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.DockerFilterHelper;
@@ -12,7 +13,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/api/volume")
 public class VolumeController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/create")
     public Map<String, Object> createVolume(@RequestBody Map<String, Object> params) {
         String volumeName = Objects.toString(params.get("volumeName"), null);
@@ -34,11 +39,12 @@ public class VolumeController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.createVolume(volume));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "创建容器挂载卷失败");
+            LoggerHelper.fmtError(getClass(), e, "创建容器挂载卷失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeVolume(@RequestBody Map<String, Object> params) {
         String volumeName = Objects.toString(params.get("volumeName"), null);
@@ -46,11 +52,12 @@ public class VolumeController extends BaseController {
             dockerClient.removeVolume(volumeName);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器挂载卷成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "删除容器挂载卷失败");
+            LoggerHelper.fmtError(getClass(), e, "删除容器挂载卷失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageVolumes(@RequestBody Map<String, Object> params) {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
@@ -69,11 +76,12 @@ public class VolumeController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, volumes));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取容器挂载卷列表失败");
+            LoggerHelper.fmtError(getClass(), e, "获取容器挂载卷列表失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getVolume(@RequestBody Map<String, Object> params) {
         String volumeName = Objects.toString(params.get("volumeName"), null);
@@ -81,7 +89,7 @@ public class VolumeController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.inspectVolume(volumeName));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取容器挂载卷失败");
+            LoggerHelper.fmtError(getClass(), e, "获取容器挂载卷失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }

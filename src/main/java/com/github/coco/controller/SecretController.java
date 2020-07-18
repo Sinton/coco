@@ -1,5 +1,6 @@
 package com.github.coco.controller;
 
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.LoggerHelper;
@@ -20,6 +21,7 @@ import java.util.Map;
 @RequestMapping(value = "/api/secret")
 public class SecretController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/create")
     public Map<String, Object> createSecret(@RequestBody Map<String, Object> params) {
         String name = params.getOrDefault("name", null).toString();
@@ -33,11 +35,12 @@ public class SecretController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.createSecret(secretSpec));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "创建加密配置项失败");
+            LoggerHelper.fmtError(getClass(), e, "创建加密配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeSecret(@RequestBody Map<String, Object> params) {
         String secretId = params.getOrDefault("secretId", null).toString();
@@ -45,11 +48,12 @@ public class SecretController extends BaseController {
             dockerClient.deleteSecret(secretId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除加密配置项成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "删除加密配置项失败");
+            LoggerHelper.fmtError(getClass(), e, "删除加密配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageSecrets(@RequestBody Map<String, Object> params) {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
@@ -59,11 +63,12 @@ public class SecretController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, secrets));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取加密配置项列表失败");
+            LoggerHelper.fmtError(getClass(), e, "获取加密配置项列表失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
 
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getSecret(@RequestBody Map<String, Object> params) {
         String secretId = params.getOrDefault("secretId", null).toString();
@@ -71,7 +76,7 @@ public class SecretController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.inspectSecret(secretId));
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), "获取加密配置项信息失败");
+            LoggerHelper.fmtError(getClass(), "获取加密配置项信息失败");
             return  apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }

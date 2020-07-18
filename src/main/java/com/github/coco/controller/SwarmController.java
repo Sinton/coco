@@ -1,5 +1,6 @@
 package com.github.coco.controller;
 
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.LoggerHelper;
@@ -17,12 +18,13 @@ import java.util.Map;
 @RequestMapping(value = "/api/swarm")
 public class SwarmController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/inspect")
     public Map<String, Object> getSwarm(@RequestBody Map<String, Object> params) {
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, dockerClient.inspectSwarm());
         } catch (Exception e) {
-            LoggerHelper.fmtError(this.getClass(), e, "获取集群节点信息失败");
+            LoggerHelper.fmtError(getClass(), e, "获取集群节点信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "获取集群节点信息失败");
         }
     }
