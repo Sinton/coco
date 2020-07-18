@@ -1,5 +1,6 @@
-package com.github.coco.handle;
+package com.github.coco.socket;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
@@ -7,11 +8,17 @@ import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
 import com.github.coco.factory.DockerConnector;
+import com.github.coco.handle.ExecSession;
+import com.github.coco.terminal.TerminalConnect;
+import com.github.coco.terminal.WebTerminalUser;
 import com.github.coco.thread.OutPutThread;
 import com.github.coco.utils.LoggerHelper;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -19,9 +26,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author Yan
@@ -36,6 +47,7 @@ public class SocketEventHandle {
     @OnConnect
     public void onConnect(SocketIOClient client) {
         clientMap.put(client.getSessionId().toString(), client);
+        initConnection(client);
         LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 在%s 接入", client.getSessionId(), client.getRemoteAddress()));
     }
 
@@ -43,6 +55,7 @@ public class SocketEventHandle {
     public void onDisConnect(SocketIOClient client) {
         client.disconnect();
         clientMap.remove(client.getSessionId().toString(), client);
+        disconnectTerminal(client);
         LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 在%s 断开连接", client.getSessionId(), client.getRemoteAddress()));
     }
 
@@ -134,15 +147,114 @@ public class SocketEventHandle {
         execSessionMap.put(containerId, new ExecSession(socket,outPutThread));
     }
 
-    @Scheduled(fixedDelay = 5 * 1000)
-    private void test() {
-        clientMap.forEach((token, client) -> {
-            client.sendEvent("test", "测试");
-        });
+    private Map<String, Object> terminalMap = new ConcurrentHashMap<>(16);
+    private ExecutorService executorService = Executors.newCachedThreadPool();
+
+    public void initConnection(SocketIOClient client) {
+        TerminalConnect terminalConnect = new TerminalConnect();
+        terminalConnect.setJSch(new JSch());
+        terminalConnect.setSocketClient(client);
+        String sessionId = client.getSessionId().toString();
+        terminalMap.put(sessionId, terminalConnect);
     }
 
-    @OnEvent("test")
-    public void ontest(SocketIOClient client, AckRequest request, HashMap<String, Object> params) {
-        LoggerHelper.fmtInfo(getClass(), params.toString());
+    @OnEvent("connectTerminal")
+    public void onConnectTerminal(SocketIOClient client, AckRequest request, Object data) {
+        try {
+            WebTerminalUser webTerminalUser = JSON.parseObject(JSON.toJSONString(data), WebTerminalUser.class);
+            String sessionId = client.getSessionId().toString();
+            TerminalConnect terminalConnect = (TerminalConnect) terminalMap.get(sessionId);
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        connectTerminal(terminalConnect, webTerminalUser, client);
+                    } catch (JSchException | IOException e) {
+                        LoggerHelper.fmtError(getClass(), e, "webssh连接异常");
+                        disconnectTerminal(client);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            LoggerHelper.fmtError(getClass(), e, "Json转换异常");
+        }
+    }
+
+    @OnEvent("terminal")
+    public void onTerminal(SocketIOClient client, AckRequest request, Object data) {
+        try {
+            WebTerminalUser webTerminalUser = JSON.parseObject(JSON.toJSONString(data), WebTerminalUser.class);
+            String sessionId = client.getSessionId().toString();
+            if ("command".equals(webTerminalUser.getOperate())) {
+                String command = webTerminalUser.getCommand();
+                TerminalConnect terminalConnect = (TerminalConnect) terminalMap.get(sessionId);
+                if (terminalConnect != null) {
+                    try {
+                        if (terminalConnect.getChannel() != null) {
+                            OutputStream outputStream = terminalConnect.getChannel().getOutputStream();
+                            outputStream.write(command.getBytes());
+                            outputStream.flush();
+                        }
+                    } catch (IOException e) {
+                        LoggerHelper.fmtError(getClass(), e, "webssh连接异常");
+                        disconnectTerminal(client);
+                    }
+                }
+            } else {
+                LoggerHelper.error(getClass(), "不支持的操作");
+                disconnectTerminal(client);
+            }
+        } catch (Exception e) {
+            LoggerHelper.fmtError(getClass(), e, "Json转换异常");
+        }
+    }
+
+    private void connectTerminal(TerminalConnect terminalConnect, WebTerminalUser webTerminalUser, SocketIOClient client) throws JSchException, IOException {
+        Session session = terminalConnect.getJSch()
+                .getSession(webTerminalUser.getUsername(),
+                        webTerminalUser.getHost(),
+                        webTerminalUser.getPort());
+        Properties terminalConfig = new Properties();
+        terminalConfig.put("StrictHostKeyChecking", "no");
+        // 设置session
+        session.setConfig(terminalConfig);
+        session.setPassword(webTerminalUser.getPassword());
+        session.connect(30 * 1000);
+        // 设置连接信道
+        Channel channel = session.openChannel("shell");
+        channel.connect(3 * 1000);
+        terminalConnect.setChannel(channel);
+        // 读取终端返回的信息流
+        InputStream inputStream = channel.getInputStream();
+        try {
+            byte[] buffer = new byte[1024];
+            int i = 0;
+            // 如果没有数据来，线程会一直阻塞在这个地方等待数据。
+            while ((i = inputStream.read(buffer)) != -1) {
+                client.sendEvent("terminal", new String(Arrays.copyOfRange(buffer, 0, i), StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) {
+            LoggerHelper.fmtError(getClass(), e, "读取终端命令错误");
+        } finally {
+            // 断开连接后关闭会话
+            session.disconnect();
+            channel.disconnect();
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        }
+    }
+
+    public void disconnectTerminal(SocketIOClient session) {
+        String sessionId = String.valueOf(session.getSessionId());
+        TerminalConnect terminalConnect = (TerminalConnect) terminalMap.get(sessionId);
+        if (terminalConnect != null) {
+            // 断开连接
+            if (terminalConnect.getChannel() != null) {
+                terminalConnect.getChannel().disconnect();
+            }
+            //map中移除
+            terminalMap.remove(sessionId);
+        }
     }
 }
