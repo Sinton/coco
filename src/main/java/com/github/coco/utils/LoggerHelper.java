@@ -21,7 +21,7 @@ public class LoggerHelper {
     }
 
     /**
-     * 格式化输出，占位符同MessageFormat.format()函数
+     * 格式化输出，占位符同String.format()函数
      *
      * @param clazz
      * @param fmtString
@@ -35,7 +35,7 @@ public class LoggerHelper {
             return;
         }
         if ((null != value) && (value.length != 0)) {
-            fmtString = String.format(fmtString, (Object) value);
+            fmtString = String.format(fmtString, (Object[]) value);
         }
         debug(clazz, fmtString);
     }
@@ -65,7 +65,7 @@ public class LoggerHelper {
             return;
         }
         if ((null != value) && (value.length != 0)) {
-            fmtString = String.format(fmtString, (Object) value);
+            fmtString = String.format(fmtString, (Object[]) value);
         }
         info(clazz, fmtString);
     }
@@ -104,7 +104,7 @@ public class LoggerHelper {
             return;
         }
         if ((null != value) && (value.length != 0)) {
-            fmtString = String.format(fmtString, (Object) value);
+            fmtString = String.format(fmtString, (Object[]) value);
         }
         error(clazz, fmtString, e);
     }

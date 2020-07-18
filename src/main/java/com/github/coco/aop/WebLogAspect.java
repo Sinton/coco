@@ -32,25 +32,25 @@ public class WebLogAspect {
         String methodDescription = getAspectDescription(joinPoint);
 
         // 打印请求相关参数
-        LoggerHelper.fmtInfo(this.getClass(), "========================================== Start ==========================================");
+        LoggerHelper.fmtInfo(getClass(), "========================================== Start ==========================================");
         // 打印请求 url
-        LoggerHelper.fmtInfo(this.getClass(), "URL            : {0}", request.getRequestURL().toString());
+        LoggerHelper.fmtInfo(getClass(), "URL            : %s", request.getRequestURL().toString());
         // 打印描述信息
-        LoggerHelper.fmtInfo(this.getClass(), "Description    : {0}", methodDescription);
+        LoggerHelper.fmtInfo(getClass(), "Description    : %s", methodDescription);
         // 打印 Http method
-        LoggerHelper.fmtInfo(this.getClass(), "HTTP Method    : {0}", request.getMethod());
+        LoggerHelper.fmtInfo(getClass(), "HTTP Method    : %s", request.getMethod());
         // 打印调用 controller 的全路径以及执行方法
-        LoggerHelper.fmtInfo(this.getClass(), "Class Method   : {0}.{0}", joinPoint.getSignature().getDeclaringTypeName(), joinPoint.getSignature().getName());
+        LoggerHelper.fmtInfo(getClass(), "Class Method   : %s.%s", joinPoint.getSignature().getDeclaringTypeName(), joinPoint.getSignature().getName());
         // 打印请求的 IP
-        LoggerHelper.fmtInfo(this.getClass(), "IP             : {0}", request.getRemoteAddr());
+        LoggerHelper.fmtInfo(getClass(), "IP             : %s", request.getRemoteAddr());
         // 打印请求入参
-        LoggerHelper.fmtInfo(this.getClass(), "Request Args   : {0}", joinPoint.getArgs());
+        LoggerHelper.fmtInfo(getClass(), "Request Args   : %s", joinPoint.getArgs());
     }
 
     @After("webLogPointCut()")
     private void doAfter(JoinPoint joinPoint) {
         // 接口结束后换行，方便分割查看
-        LoggerHelper.fmtInfo(this.getClass(), "=========================================== End ===========================================");
+        LoggerHelper.fmtInfo(getClass(), "=========================================== End ===========================================");
     }
 
     @AfterReturning("webLogPointCut()")
@@ -79,9 +79,9 @@ public class WebLogAspect {
         long startTime = System.currentTimeMillis();
         Object result = proceedingJoinPoint.proceed();
         // 打印出参
-        LoggerHelper.fmtInfo(this.getClass(), "Response Args  : {0}", result);
+        LoggerHelper.fmtInfo(getClass(), "Response Args  : %s", result);
         // 执行耗时
-        LoggerHelper.fmtInfo(this.getClass(), "Time-Consuming : {0} ms", System.currentTimeMillis() - startTime);
+        LoggerHelper.fmtInfo(getClass(), "Time-Consuming : %s ms", System.currentTimeMillis() - startTime);
         return result;
     }
 
