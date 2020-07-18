@@ -8,5 +8,5 @@ import java.io.Serializable;
  * @author Yan
  */
 @Data
-public class Setting implements Serializable {
+public class Setting {
 }

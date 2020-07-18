@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author Yan
  */
 @Data
-public class User implements Serializable {
+public class User {
     private Long uid;
     private String nickname;
     private String username;

@@ -1,17 +1,17 @@
 package com.github.coco.entity;
 
+import lombok.Builder;
 import lombok.Data;
-
-import java.io.Serializable;
 
 /**
  * @author Yan
  */
 @Data
-public class Endpoint implements Serializable {
-    private String ip;
+@Builder
+public class Endpoint {
+    private String id;
+    private String host;
     private Integer port;
-    private String username;
-    private Character authType;
+    private String user;
     private String password;
 }

@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author Yan
  */
 @Data
-public class Pipline implements Serializable {
+public class Pipline {
     private String id;
     private String name;
     private Character type;
