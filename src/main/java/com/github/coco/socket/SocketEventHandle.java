@@ -1,7 +1,6 @@
 package com.github.coco.socket;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.OnConnect;
@@ -13,12 +12,14 @@ import com.github.coco.terminal.TerminalConnect;
 import com.github.coco.terminal.WebTerminalUser;
 import com.github.coco.thread.OutPutThread;
 import com.github.coco.utils.LoggerHelper;
+import com.github.coco.utils.ThreadPoolHelper;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -26,29 +27,29 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author Yan
  */
 @Component
 public class SocketEventHandle {
+    public static final String SOCKET_EVENT_CONNECT_TERMINAL           = "connectTerminal";
+    public static final String SOCKET_EVENT_TERMINAL                   = "terminal";
+    public static final String SOCKET_EVENT_CONTAINER_TERMINAL         = "containerTerminal";
+    public static final String SOCKET_EVENT_CONNECT_CONTAINER_TERMINAL = "connectContainerTerminal";
     private static DockerClient dockerClient = DockerConnector.getInstance().getDockerClient();
 
     public static volatile Map<String, SocketIOClient> clientMap = new ConcurrentHashMap<>(16);
     private static Map<String, ExecSession> execSessionMap = new ConcurrentHashMap<>(16);
+    private static Map<String, Object> terminalMap = new ConcurrentHashMap<>(16);
 
     @OnConnect
     public void onConnect(SocketIOClient client) {
         clientMap.put(client.getSessionId().toString(), client);
+        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 建立连接", client.getSessionId()));
         initConnection(client);
-        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 在%s 接入", client.getSessionId(), client.getRemoteAddress()));
     }
 
     @OnDisconnect
@@ -56,19 +57,19 @@ public class SocketEventHandle {
         client.disconnect();
         clientMap.remove(client.getSessionId().toString(), client);
         disconnectTerminal(client);
-        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 在%s 断开连接", client.getSessionId(), client.getRemoteAddress()));
+        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 断开连接", client.getSessionId()));
     }
 
-    @OnEvent("terminal")
-    public void onExecContainerMessage(SocketIOClient client, AckRequest request, HashMap<String, Object> params) {
-        String containerId = params.getOrDefault("containerId", null).toString();
-        String cmd = params.getOrDefault("cmd", "").toString() + System.lineSeparator();
-        boolean stdErr = Boolean.parseBoolean(params.getOrDefault("stdErr", true).toString());
-        boolean stdOut = Boolean.parseBoolean(params.getOrDefault("stdOut", true).toString());
-        boolean stdIn = Boolean.parseBoolean(params.getOrDefault("stdIn", true).toString());
-        boolean privileged = Boolean.parseBoolean(params.getOrDefault("privileged", true).toString());
-        boolean tty = Boolean.parseBoolean(params.getOrDefault("tty", true).toString());
-        boolean detach = Boolean.parseBoolean(params.getOrDefault("detach", false).toString());
+    @OnEvent(SOCKET_EVENT_CONTAINER_TERMINAL)
+    public void onConnectContainerTerminal(SocketIOClient client, AckRequest request, HashMap<String, Object> params) {
+        String containerId = Objects.toString(params.get("containerId"), "");
+        String cmd         = params.getOrDefault("command", "").toString();
+        boolean stdErr     = Boolean.parseBoolean(Objects.toString(params.get("stdErr"), "true"));
+        boolean stdOut     = Boolean.parseBoolean(Objects.toString(params.get("stdOut"), "true"));
+        boolean stdIn      = Boolean.parseBoolean(Objects.toString(params.get("stdIn"), "true"));
+        boolean privileged = Boolean.parseBoolean(Objects.toString(params.get("privileged"), "true"));
+        boolean tty        = Boolean.parseBoolean(Objects.toString(params.get("tty"), "true"));
+        boolean detach     = Boolean.parseBoolean(Objects.toString(params.get("detach"), "false"));
         try {
             ExecSession execSession = execSessionMap.get(containerId);
             if (execSession != null) {
@@ -85,70 +86,78 @@ public class SocketEventHandle {
                                                         DockerClient.ExecCreateParam.tty(tty),
                                                         DockerClient.ExecCreateParam.detach(detach))
                                             .id();
-                Socket socket = connectExec(client, dockerClient, execId);
-                getExecMessage(containerId, client, socket);
-                // resizeTty(dockerClient, execId);
+                Socket socket = connectContainerTerminalSocket(client, dockerClient, execId);
+                getTerminalContent(containerId, client, socket);
+                // resizeTty(dockerClient, execId, 200, 200);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LoggerHelper.fmtError(getClass(), e, "与容器[%s]建立终端连接异常", containerId);
         }
     }
 
-    private void resizeTty(DockerClient dockerClient, String execId) throws DockerException, InterruptedException {
-        dockerClient.execResizeTty(execId, 200, 200);
+    @OnEvent("closeContainerTerminal")
+    public void onCloseContainerTerminal(SocketIOClient client, AckRequest request, HashMap<String, Object> params) {
+        String containerId = Objects.toString(params.get("containerId"), "");
+        ExecSession execSession = execSessionMap.get(containerId);
+        if (execSession != null) {
+            execSessionMap.remove(containerId);
+        }
     }
 
-    private Socket connectExec(SocketIOClient client, DockerClient dockerClient, String execId) throws IOException {
-        Socket socket = new Socket(dockerClient.getHost(), 2375);
-        socket.setKeepAlive(true);
-        StringBuilder httpHeader = new StringBuilder();
-        JSONObject args = new JSONObject();
+    private void resizeTty(DockerClient dockerClient, String execId, int height, int width) {
+        try {
+            dockerClient.execResizeTty(execId, height, width);
+        } catch (DockerException | InterruptedException e) {
+            LoggerHelper.fmtError(getClass(), e, "对容器终端调整tty异常");
+        }
+    }
+
+    private Socket connectContainerTerminalSocket(SocketIOClient client, DockerClient dockerClient, String execId) throws IOException {
+        Map<String, Object> args = new HashMap<>(2);
         args.put("Detach", false);
         args.put("Tty", true);
-        String json = args.toJSONString();
-        httpHeader.append("POST /exec/")
-                  .append(execId)
-                  .append("/start HTTP/1.1\r\n")
-                  .append("Host: ")
-                  .append(dockerClient.getHost())
-                  .append(":2375\r\n")
-                  .append("User-Agent: Docker-Client\r\n")
-                  .append("Content-Type: application/json\r\n")
-                  .append("Connection: Upgrade\r\n")
-                  .append("Content-Length: ")
-                  .append(json.length())
-                  .append("\r\n")
-                  .append("Upgrade: tcp\r\n")
-                  .append("\r\n")
-                  .append(json);
-        OutputStream out = socket.getOutputStream();
-        out.write(httpHeader.toString().getBytes(StandardCharsets.UTF_8));
-        out.flush();
+        Socket socket = new Socket(dockerClient.getHost(), 2375);
+        socket.setKeepAlive(true);
+        StringBuilder httpHeader = new StringBuilder().append("POST /exec/")
+                                                      .append(execId)
+                                                      .append("/start HTTP/1.1\r\n")
+                                                      .append("Host: ")
+                                                      .append(dockerClient.getHost())
+                                                      .append(":2375\r\n")
+                                                      .append("User-Agent: Docker-Client\r\n")
+                                                      .append("Content-Type: application/json\r\n")
+                                                      .append("Connection: Upgrade\r\n")
+                                                      .append("Content-Length: ")
+                                                      .append(JSON.toJSONString(args).length())
+                                                      .append("\r\n")
+                                                      .append("Upgrade: tcp\r\n")
+                                                      .append("\r\n")
+                                                      .append(JSON.toJSONString(args));
+        OutputStream outputStream = socket.getOutputStream();
+        outputStream.write(httpHeader.toString().getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
         return socket;
     }
 
-    private void getExecMessage(String containerId, SocketIOClient client, Socket socket) throws IOException {
+    private void getTerminalContent(String containerId, SocketIOClient client, Socket socket) throws IOException {
         InputStream inputStream = socket.getInputStream();
         // 删除请求信息
-        StringBuilder execMessage = new StringBuilder();
+        StringBuilder terminalContent = new StringBuilder();
         byte[] bytes = new byte[1024 * 8];
         while (true) {
             int n = inputStream.read(bytes);
             String msg = new String(bytes, 0, n);
-            execMessage.append(msg);
+            terminalContent.append(msg);
             bytes = new byte[1024 * 8];
-            if (execMessage.indexOf("\r\n\r\n") != -1) {
-                client.sendEvent("terminal", execMessage.substring(execMessage.indexOf("\r\n\r\n") + 4, execMessage.length()));
+            if (terminalContent.indexOf("\r\n\r\n") != -1) {
+                client.sendEvent("terminal", terminalContent.substring(terminalContent.indexOf("\r\n\r\n") + 4, terminalContent.length()));
                 break;
             }
         }
         OutPutThread outPutThread = new OutPutThread(inputStream, socket, client);
         outPutThread.start();
-        execSessionMap.put(containerId, new ExecSession(socket,outPutThread));
+        execSessionMap.put(containerId, new ExecSession(socket, outPutThread));
     }
-
-    private Map<String, Object> terminalMap = new ConcurrentHashMap<>(16);
-    private ExecutorService executorService = Executors.newCachedThreadPool();
 
     public void initConnection(SocketIOClient client) {
         TerminalConnect terminalConnect = new TerminalConnect();
@@ -158,29 +167,22 @@ public class SocketEventHandle {
         terminalMap.put(sessionId, terminalConnect);
     }
 
-    @OnEvent("connectTerminal")
+    @OnEvent(SOCKET_EVENT_CONNECT_TERMINAL)
     public void onConnectTerminal(SocketIOClient client, AckRequest request, Object data) {
         try {
             WebTerminalUser webTerminalUser = JSON.parseObject(JSON.toJSONString(data), WebTerminalUser.class);
             String sessionId = client.getSessionId().toString();
             TerminalConnect terminalConnect = (TerminalConnect) terminalMap.get(sessionId);
-            executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        connectTerminal(terminalConnect, webTerminalUser, client);
-                    } catch (JSchException | IOException e) {
-                        LoggerHelper.fmtError(getClass(), e, "webssh连接异常");
-                        disconnectTerminal(client);
-                    }
-                }
+            ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.Single).execute(() -> {
+                connectTerminal(terminalConnect, webTerminalUser, client);
             });
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "Json转换异常");
+            disconnectTerminal(client);
+            LoggerHelper.fmtError(getClass(), e, "Terminal连接异常");
         }
     }
 
-    @OnEvent("terminal")
+    @OnEvent(SOCKET_EVENT_TERMINAL)
     public void onTerminal(SocketIOClient client, AckRequest request, Object data) {
         try {
             WebTerminalUser webTerminalUser = JSON.parseObject(JSON.toJSONString(data), WebTerminalUser.class);
@@ -196,7 +198,7 @@ public class SocketEventHandle {
                             outputStream.flush();
                         }
                     } catch (IOException e) {
-                        LoggerHelper.fmtError(getClass(), e, "webssh连接异常");
+                        LoggerHelper.fmtError(getClass(), e, "Terminal连接异常");
                         disconnectTerminal(client);
                     }
                 }
@@ -209,24 +211,27 @@ public class SocketEventHandle {
         }
     }
 
-    private void connectTerminal(TerminalConnect terminalConnect, WebTerminalUser webTerminalUser, SocketIOClient client) throws JSchException, IOException {
-        Session session = terminalConnect.getJSch()
-                .getSession(webTerminalUser.getUsername(),
-                        webTerminalUser.getHost(),
-                        webTerminalUser.getPort());
-        Properties terminalConfig = new Properties();
-        terminalConfig.put("StrictHostKeyChecking", "no");
-        // 设置session
-        session.setConfig(terminalConfig);
-        session.setPassword(webTerminalUser.getPassword());
-        session.connect(30 * 1000);
-        // 设置连接信道
-        Channel channel = session.openChannel("shell");
-        channel.connect(3 * 1000);
-        terminalConnect.setChannel(channel);
-        // 读取终端返回的信息流
-        InputStream inputStream = channel.getInputStream();
+    private void connectTerminal(TerminalConnect terminalConnect, WebTerminalUser webTerminalUser, SocketIOClient client) {
+        Session session = null;
+        Channel channel = null;
+        InputStream inputStream = null;
         try {
+            session = terminalConnect.getJSch()
+                                             .getSession(webTerminalUser.getUsername(),
+                                                         webTerminalUser.getHost(),
+                                                         webTerminalUser.getPort());
+            Properties terminalConfig = new Properties();
+            terminalConfig.put("StrictHostKeyChecking", "no");
+            // 设置session
+            session.setConfig(terminalConfig);
+            session.setPassword(webTerminalUser.getPassword());
+            session.connect(30 * 1000);
+            // 设置连接信道
+            channel = session.openChannel("shell");
+            channel.connect(3 * 1000);
+            terminalConnect.setChannel(channel);
+            // 读取终端返回的信息流
+            inputStream = channel.getInputStream();
             byte[] buffer = new byte[1024];
             int i = 0;
             // 如果没有数据来，线程会一直阻塞在这个地方等待数据。
@@ -236,11 +241,15 @@ public class SocketEventHandle {
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "读取终端命令错误");
         } finally {
-            // 断开连接后关闭会话
-            session.disconnect();
-            channel.disconnect();
+            // 关闭所有会话、连接信道、连接
+            if (session != null) {
+                session.disconnect();
+            }
+            if (channel != null) {
+                channel.disconnect();
+            }
             if (inputStream != null) {
-                inputStream.close();
+                IOUtils.closeQuietly(inputStream);
             }
         }
     }
@@ -253,7 +262,7 @@ public class SocketEventHandle {
             if (terminalConnect.getChannel() != null) {
                 terminalConnect.getChannel().disconnect();
             }
-            //map中移除
+            // 移除终端连接
             terminalMap.remove(sessionId);
         }
     }

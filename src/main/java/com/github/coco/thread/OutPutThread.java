@@ -1,6 +1,7 @@
 package com.github.coco.thread;
 
 import com.corundumstudio.socketio.SocketIOClient;
+import com.github.coco.socket.SocketEventHandle;
 
 import java.io.InputStream;
 import java.net.Socket;
@@ -27,8 +28,7 @@ public class OutPutThread extends Thread {
                 int n = inputStream.read(bytes);
                 if (n > 0) {
                     String msg = new String(bytes, 0, n);
-                    System.out.println(msg);
-                    client.sendEvent("exec", msg);
+                    client.sendEvent(SocketEventHandle.SOCKET_EVENT_TERMINAL, msg);
                     bytes = new byte[1024 * 8];
                 }
             }
