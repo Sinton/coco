@@ -10,8 +10,8 @@ import lombok.Data;
 @Builder
 public class Endpoint {
     private String id;
-    private String host;
+    private String ip;
     private Integer port;
-    private String user;
-    private String password;
+    private String url;
+    private String tls;
 }

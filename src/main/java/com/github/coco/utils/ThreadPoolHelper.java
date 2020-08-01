@@ -37,7 +37,7 @@ public class ThreadPoolHelper {
         /**
          * 单线程
          */
-        Single(1),
+        SINGLE(1),
         /**
          * 自动适配
          */

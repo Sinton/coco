@@ -6,11 +6,11 @@ import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
-import com.github.coco.factory.DockerConnector;
 import com.github.coco.handle.ExecSession;
 import com.github.coco.terminal.TerminalConnect;
 import com.github.coco.terminal.WebTerminalUser;
 import com.github.coco.thread.OutPutThread;
+import com.github.coco.utils.DockerConnectorHelper;
 import com.github.coco.utils.LoggerHelper;
 import com.github.coco.utils.ThreadPoolHelper;
 import com.jcraft.jsch.Channel;
@@ -19,7 +19,6 @@ import com.jcraft.jsch.Session;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -39,7 +38,7 @@ public class SocketEventHandle {
     public static final String SOCKET_EVENT_TERMINAL                   = "terminal";
     public static final String SOCKET_EVENT_CONTAINER_TERMINAL         = "containerTerminal";
     public static final String SOCKET_EVENT_CONNECT_CONTAINER_TERMINAL = "connectContainerTerminal";
-    private static DockerClient dockerClient = DockerConnector.getInstance().getDockerClient();
+    private static DockerClient dockerClient = DockerConnectorHelper.getDockerClient("192.168.3.140", 2375);
 
     public static volatile Map<String, SocketIOClient> clientMap = new ConcurrentHashMap<>(16);
     private static Map<String, ExecSession> execSessionMap = new ConcurrentHashMap<>(16);
@@ -173,7 +172,7 @@ public class SocketEventHandle {
             WebTerminalUser webTerminalUser = JSON.parseObject(JSON.toJSONString(data), WebTerminalUser.class);
             String sessionId = client.getSessionId().toString();
             TerminalConnect terminalConnect = (TerminalConnect) terminalMap.get(sessionId);
-            ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.Single).execute(() -> {
+            ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE).execute(() -> {
                 connectTerminal(terminalConnect, webTerminalUser, client);
             });
         } catch (Exception e) {

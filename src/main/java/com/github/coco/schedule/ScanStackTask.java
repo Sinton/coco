@@ -1,6 +1,5 @@
 package com.github.coco.schedule;
 
-import com.github.coco.factory.DockerConnector;
 import com.github.coco.utils.DockerConnectorHelper;
 import com.spotify.docker.client.DockerClient;
 import org.springframework.scheduling.annotation.Scheduled;

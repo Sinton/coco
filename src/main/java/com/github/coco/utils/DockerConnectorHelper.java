@@ -1,6 +1,6 @@
 package com.github.coco.utils;
 
-import com.github.coco.factory.ConnectorConfig;
+import com.github.coco.entity.Endpoint;
 import com.github.coco.factory.DockerConnectorFactory;
 import com.spotify.docker.client.DockerClient;
 import org.apache.commons.pool2.impl.GenericObjectPool;
@@ -10,25 +10,29 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
  */
 public class DockerConnectorHelper {
 
-    public static DockerClient getDockerClient(String host, int port) {
-        try {
-            ConnectorConfig connectorConfig = ConnectorConfig.builder()
-                                                             .host(host)
-                                                             .port(port)
-                                                             .build();
-            return getDockerClient(connectorConfig);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    public static DockerClient getDockerClient() {
+        return getDockerClient(null);
     }
 
-    public static DockerClient getDockerClient(ConnectorConfig connectorConfig) {
+    public static DockerClient getDockerClient(String ip, int port) {
+        Endpoint endpoint = Endpoint.builder()
+                                    .ip(ip)
+                                    .port(port)
+                                    .build();
+        return getDockerClient(endpoint);
+    }
+
+    public static DockerClient getDockerClient(Endpoint endpoint) {
         try {
-            GenericObjectPool<DockerClient> dockerClientPool = new GenericObjectPool<>(new DockerConnectorFactory(connectorConfig));
+            GenericObjectPool<DockerClient> dockerClientPool;
+            if (endpoint != null) {
+                dockerClientPool = new GenericObjectPool<>(new DockerConnectorFactory(endpoint));
+            } else {
+                dockerClientPool = new GenericObjectPool<>(new DockerConnectorFactory());
+            }
             return dockerClientPool.borrowObject();
         } catch (Exception e) {
-            e.printStackTrace();
+            LoggerHelper.fmtError(DockerConnectorHelper.class, e, "获取Docker连接对象失败");
             return null;
         }
     }
