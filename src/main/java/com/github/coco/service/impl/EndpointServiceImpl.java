@@ -1,7 +1,8 @@
-package com.github.coco.service;
+package com.github.coco.service.impl;
 
 import com.github.coco.entity.Endpoint;
 import com.github.coco.dao.EndpointDAO;
+import com.github.coco.service.EndpointService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
