@@ -9,7 +9,7 @@ import java.io.Serializable;
  */
 @Data
 public class User {
-    private Long uid;
+    private String uid;
     private String nickname;
     private String username;
     private String password;
