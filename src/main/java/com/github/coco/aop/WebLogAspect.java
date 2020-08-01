@@ -93,11 +93,11 @@ public class WebLogAspect {
      * @throws Exception
      */
     private String getAspectDescription(JoinPoint joinPoint) throws Exception {
-        String targetName = joinPoint.getTarget().getClass().getName();
-        String methodName = joinPoint.getSignature().getName();
-        Object[] arguments = joinPoint.getArgs();
-        Class<?> targetClass = Class.forName(targetName);
-        Method[] methods = targetClass.getMethods();
+        String targetName         = joinPoint.getTarget().getClass().getName();
+        String methodName         = joinPoint.getSignature().getName();
+        Object[] arguments        = joinPoint.getArgs();
+        Class<?> targetClass      = Class.forName(targetName);
+        Method[] methods          = targetClass.getMethods();
         StringBuilder description = new StringBuilder();
         for (Method method : methods) {
             if (method.getName().equals(methodName)) {

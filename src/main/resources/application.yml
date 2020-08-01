@@ -40,7 +40,7 @@ mybatis:
     map-underscore-to-camel-case: true
 
 #============================================================================
-# Netty Socket IO
+# Netty Socket-IO
 #============================================================================
 socketio:
   host: localhost
