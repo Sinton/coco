@@ -15,18 +15,18 @@ public interface EndpointDAO extends BaseDAO {
      *
      * @param endpoint
      */
-    @Insert("INSERT INTO t_endpoint(host, port, user, password) " +
-            "VALUES (#{host}, #{port}, #{user}, #{password})")
+    @Insert("INSERT INTO t_endpoint(ip, port, name, url) " +
+            "VALUES (#{ip}, #{port}, #{name}, #{url})")
     void insertEndpoint(Endpoint endpoint);
 
     /**
      * 删除Endpoint
      *
-     * @param endpoint
+     * @param id
      * @return
      */
-    @Delete("DELETE FROM t_endpoint where id = #{id} AND host = #{host}")
-    int deleteEndpoint(Endpoint endpoint);
+    @Delete("DELETE FROM t_endpoint where id = #{id}")
+    int deleteEndpoint(String id);
 
     /**
      * 修改Endpoint
@@ -34,8 +34,14 @@ public interface EndpointDAO extends BaseDAO {
      * @param endpoint
      * @return
      */
-    @Update("UPDATE t_endpoint SET host = #{host} WHERE id = #{id}")
+    @Update("UPDATE t_endpoint SET ip = #{ip} WHERE id = #{id}")
     int updateEndpoint(Endpoint endpoint);
+
+    @Select("SELECT * FROM t_endpoint WHERE id = #{id}")
+    Endpoint selectEndpoint(Endpoint endpoint);
+
+    @Select("SELECT * FROM t_endpoint WHERE id = #{id}")
+    Endpoint selectEndpointById(String id);
 
     /**
      * 查询Endpoint
@@ -43,5 +49,5 @@ public interface EndpointDAO extends BaseDAO {
      * @return
      */
     @Select("SELECT * FROM t_endpoint")
-    List<Endpoint> selectEndpoint();
+    List<Endpoint> selectEndpoints();
 }
