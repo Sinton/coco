@@ -216,9 +216,9 @@ public class SocketEventHandle {
         InputStream inputStream = null;
         try {
             session = terminalConnect.getJSch()
-                                             .getSession(webTerminalUser.getUsername(),
-                                                         webTerminalUser.getHost(),
-                                                         webTerminalUser.getPort());
+                                     .getSession(webTerminalUser.getUsername(),
+                                                 webTerminalUser.getHost(),
+                                                 webTerminalUser.getPort());
             Properties terminalConfig = new Properties();
             terminalConfig.put("StrictHostKeyChecking", "no");
             // 设置session

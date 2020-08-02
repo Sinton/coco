@@ -7,6 +7,7 @@ import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.socket.SocketEventHandle;
 import com.github.coco.utils.DockerFilterHelper;
 import com.github.coco.utils.LoggerHelper;
+import com.github.coco.utils.ThreadPoolHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.exceptions.ImagePullFailedException;
@@ -22,8 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +43,7 @@ public class ImageController extends BaseController {
         }
         // TODO 对接Docker Registry
         final String imageFullName = imageName;
-        ExecutorService threadPool = Executors.newSingleThreadExecutor();
+        ThreadPoolExecutor threadPool = ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE);
         threadPool.execute(() -> {
             try {
                 dockerClient.pull(imageFullName, message -> {

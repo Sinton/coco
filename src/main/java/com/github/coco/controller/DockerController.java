@@ -1,5 +1,6 @@
 package com.github.coco.controller;
 
+import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.LoggerHelper;
@@ -17,6 +18,7 @@ import java.util.Map;
 @RequestMapping(value = "/api/docker")
 public class DockerController extends BaseController {
 
+    @WebLog
     @PostMapping(value = "/version")
     public Map<String, Object> getDockerVersion(@RequestBody Map<String, Object> params) {
         try {
@@ -27,6 +29,7 @@ public class DockerController extends BaseController {
         }
     }
 
+    @WebLog
     @PostMapping(value = "/info")
     public Map<String, Object> getDockerInfo(@RequestBody Map<String, Object> params) {
         try {
