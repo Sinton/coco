@@ -1,5 +1,7 @@
 package com.github.coco.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
@@ -15,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Yan
@@ -58,15 +61,15 @@ public class ConfigController extends BaseController {
     @WebLog
     @PostMapping(value = "/update")
     public Map<String, Object> updateConfig(@RequestBody Map<String, Object> params) {
-        String configId = params.getOrDefault("configId", null).toString();
-        String data = params.getOrDefault("data", null).toString();
+        String configId            = Objects.toString(params.get("configId"), "");
+        String data                = Objects.toString(params.get("data"), "");
+        Map<String, String> labels = JSON.parseObject(Objects.toString(params.get("data"), ""),
+                                                      new TypeReference<Map<String, String>>() {});
         try {
             Config config = dockerClient.inspectConfig(configId);
             ConfigSpec configSpec = ConfigSpec.builder()
                                               .name(config.configSpec().name())
-                                              .labels(config.configSpec().labels())
-                                              .data(Base64.getEncoder()
-                                                          .encodeToString(data.getBytes(StandardCharsets.UTF_8)))
+                                              .labels(labels)
                                               .build();
             dockerClient.updateConfig(config.id(), config.version().index(), configSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "修改配置项成功");
@@ -93,13 +96,13 @@ public class ConfigController extends BaseController {
 
     @WebLog
     @PostMapping(value = "/inspect")
-    public Map<String, Object> getConfig(@RequestBody Map<String, Object> params) {
-        String configId = params.getOrDefault("configId", null).toString();
+    public Map<String, Object> inspectConfig(@RequestBody Map<String, Object> params) {
+        String configId = Objects.toString(params.get("configId"), "");
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.inspectConfig(configId));
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取容器配置项失败");
+            LoggerHelper.fmtError(getClass(), e, "获取容器配置项摘要信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
