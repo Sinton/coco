@@ -16,12 +16,14 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.PortBinding;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Yan
@@ -33,14 +35,14 @@ public class ContainerController extends BaseController {
     public static class DeployContainer {
         private String name;
         private String image;
-        private Boolean autoRemove;
-        private Boolean publishAllPorts;
-        private Boolean privileged;
+        private Boolean autoRemove = false;
+        private Boolean publishAllPorts = false;
+        private Boolean privileged = false;
         private String cmds;
         private String entrypoint;
-        private Map<String, Object> labels;
-        private Map<String, Object> envs;
-        private Map<String, String> portMapping;
+        private Map<String, String> ports = new HashMap<>(16);
+        private Map<String, String> envs = new HashMap<>(16);
+        private Map<String, String> labels = new HashMap<>(16);
     }
 
     /**
@@ -58,39 +60,49 @@ public class ContainerController extends BaseController {
         boolean autoRemove              = deployContainer.getAutoRemove();
         boolean publishAllPorts         = deployContainer.getPublishAllPorts();
         boolean privileged              = deployContainer.getPrivileged();
+        Map<String, String> ports       = deployContainer.getPorts();
+        Map<String, String> envs        = deployContainer.getEnvs();
+        Map<String, String> labels      = deployContainer.getLabels();
         String cmds                     = deployContainer.getCmds();
         String entrypoint               = deployContainer.getEntrypoint();
-        Map<String, Object> labels      = deployContainer.getLabels();
-        Map<String, Object> envs        = deployContainer.getEnvs();
-        Map<String, String> portMapping = deployContainer.getPortMapping();
         try {
-            Set<String> ports = portMapping.keySet();
+            Set<String> containerExposedPorts = ports.keySet();
             Map<String, List<PortBinding>> portBindings = new HashMap<>(4);
-            for (String port : ports) {
-                List<PortBinding> hostPorts = new ArrayList<>();
-                hostPorts.add(PortBinding.hostPort(portMapping.get(port)));
-                portBindings.put(port, hostPorts);
+            for (String exposedPort : containerExposedPorts) {
+                portBindings.put(exposedPort,
+                                 Collections.singletonList(PortBinding.of(dockerClient.getHost(),
+                                                                          ports.get(exposedPort))));
             }
             HostConfig hostConfig = HostConfig.builder()
-                                              .autoRemove(autoRemove)
+                                              .privileged(privileged)
                                               .portBindings(portBindings)
                                               .publishAllPorts(publishAllPorts)
-                                              .privileged(privileged)
+                                              .autoRemove(autoRemove)
                                               .build();
 
-            ContainerConfig config = ContainerConfig.builder()
-                                                    .image(image)
-                                                    //.cmd(cmds.split(","))
-                                                    //.entrypoint(entrypoint.split(","))
-                                                    //.env(env.split(","))
-                                                    .hostConfig(hostConfig)
-                                                    .exposedPorts(ports)
-                                                    .attachStdin(true)
-                                                    .attachStdout(true)
-                                                    .attachStderr(true)
-                                                    .tty(false)
-                                                    .build();
-            String containerId = dockerClient.createContainer(config, name).id();
+            ContainerConfig.Builder builder = ContainerConfig.builder()
+                                                             .attachStdin(false)
+                                                             .attachStdout(true)
+                                                             .attachStderr(true)
+                                                             .image(image)
+                                                             .hostConfig(hostConfig)
+                                                             .tty(false);
+            if (!containerExposedPorts.isEmpty()) {
+                builder.exposedPorts(containerExposedPorts);
+            }
+            if (!envs.isEmpty()) {
+                builder.env(envs.entrySet()
+                                .stream()
+                                .map(env -> String.format("%s=%s", env.getKey(), env.getValue()))
+                                .collect(Collectors.toList()));
+            }
+            if (!labels.isEmpty()) {
+                builder.labels(labels);
+            }
+            if (StringUtils.isNotBlank(cmds)) {
+                builder.cmd(cmds.split(","));
+            }
+            String containerId = dockerClient.createContainer(builder.build(), name).id();
             dockerClient.startContainer(containerId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "部署容器成功");
         } catch (Exception e) {
@@ -113,13 +125,16 @@ public class ContainerController extends BaseController {
         boolean withVolumes = Boolean.parseBoolean(params.getOrDefault("withVolumes", false).toString());
         if (containerId != null) {
             try {
+                boolean autoRemove = dockerClient.inspectContainer(containerId).hostConfig().autoRemove();
                 if (!Objects.equals(dockerClient.inspectContainer(containerId).state().status(),
                                     ContainerStatusEnum.EXITED.getStatus())) {
                     dockerClient.killContainer(containerId);
                 }
-                dockerClient.removeContainer(containerId,
-                                             DockerClient.RemoveContainerParam.forceKill(force),
-                                             DockerClient.RemoveContainerParam.removeVolumes(withVolumes));
+                if (!autoRemove) {
+                    dockerClient.removeContainer(containerId,
+                                                 DockerClient.RemoveContainerParam.forceKill(force),
+                                                 DockerClient.RemoveContainerParam.removeVolumes(withVolumes));
+                }
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器成功");
             } catch (Exception e) {
                 LoggerHelper.fmtError(getClass(), e, "删除容器失败");
