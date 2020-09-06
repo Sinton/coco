@@ -1,9 +1,13 @@
 package com.github.coco.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
+import com.github.coco.utils.DockerBuilderHelper;
 import com.github.coco.utils.LoggerHelper;
+import com.github.coco.utils.StringHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.swarm.*;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static com.github.coco.utils.DockerBuilderHelper.*;
 
 /**
  * @author Yan
@@ -50,13 +57,28 @@ public class ServiceController extends BaseController {
     }
 
     @WebLog
+    @PostMapping(value = "/update")
+    public Map<String, Object> updateService(@RequestBody Map<String, Object> params) {
+        String serviceId = params.getOrDefault("serviceId", null).toString();
+        try {
+            Service service = dockerClient.inspectService(serviceId);
+            dockerClient.updateService(serviceId, service.version().index(), service.spec());
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
+        } catch (Exception e) {
+            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
+        }
+    }
+
+    @WebLog
     @PostMapping(value = "/scale")
     public Map<String, Object> scale(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
         Long replicas = Long.parseLong(params.getOrDefault("replicas", 1).toString());
         String mode = params.getOrDefault("mode", "replicated").toString();
         try {
-            ServiceSpec oldServiceSpec = dockerClient.inspectService(serviceId).spec();
+            Service service = dockerClient.inspectService(serviceId);
+            ServiceSpec oldServiceSpec = service.spec();
             ServiceMode serviceMode = null;
             switch (mode) {
                 case "replicated":
@@ -70,16 +92,8 @@ public class ServiceController extends BaseController {
                 default:
                     break;
             }
-            ServiceSpec serviceSpec = ServiceSpec.builder()
-                                                 .name(oldServiceSpec.name())
-                                                 .mode(serviceMode)
-                                                 .labels(oldServiceSpec.labels())
-                                                 .taskTemplate(oldServiceSpec.taskTemplate())
-                                                 .endpointSpec(oldServiceSpec.endpointSpec())
-                                                 .networks(oldServiceSpec.networks())
-                                                 .updateConfig(oldServiceSpec.updateConfig())
-                                                 .build();
-            dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
+            ServiceSpec serviceSpec = DockerBuilderHelper.serviceSpecBuilder(oldServiceSpec, ServiceSpecEnum.MODE, serviceMode);
+            dockerClient.updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新编排任务调度成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "更新编排任务调度失败");
@@ -92,10 +106,37 @@ public class ServiceController extends BaseController {
     public Map<String, Object> updateResources(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
         try {
-            ServiceSpec oldServiceSpec = dockerClient.inspectService(serviceId).spec();
+            ResourceRequirements resourceRequirements = ResourceRequirements.builder().build();
+            Service service = dockerClient.inspectService(serviceId);
+            ServiceSpec oldServiceSpec = service.spec();
+            TaskSpec taskSpec = DockerBuilderHelper.taskSpecBuilder(service.spec().taskTemplate(),
+                                                                    TaskSpecEnum.RESOURCES,
+                                                                    resourceRequirements);
+            ServiceSpec serviceSpec = DockerBuilderHelper.serviceSpecBuilder(oldServiceSpec,
+                                                                             ServiceSpecEnum.TASK_TEMPLATE,
+                                                                             taskSpec);
+            dockerClient.updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
+        }
+    }
+
+    @WebLog
+    @PostMapping(value = "/label")
+    public Map<String, Object> updateLabel(@RequestBody Map<String, Object> params) {
+        String serviceId = params.getOrDefault("serviceId", null).toString();
+        Map<String, String> labels = StringHelper.stringConvertMap(params.getOrDefault("serviceLabels", "").toString());
+        try {
+            Service service = dockerClient.inspectService(serviceId);
+            ServiceSpec serviceSpec = DockerBuilderHelper.serviceSpecBuilder(service.spec(),
+                                                                             ServiceSpecEnum.LABELS,
+                                                                             labels);
+            dockerClient.updateService(serviceId, service.version().index(), serviceSpec);
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
+        } catch (Exception e) {
+            LoggerHelper.fmtError(getClass(), e, "更新标签失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -105,34 +146,18 @@ public class ServiceController extends BaseController {
     public Map<String, Object> updateMount(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
         try {
-            ServiceSpec oldServiceSpec = dockerClient.inspectService(serviceId).spec();
-            ContainerSpec oldContainerSpec = oldServiceSpec.taskTemplate().containerSpec();
-            ContainerSpec containerSpec = ContainerSpec.builder()
-                                                       .image(oldContainerSpec.image())
-                                                       .args(oldContainerSpec.args())
-                                                       .command(oldContainerSpec.command())
-                                                       .env(oldContainerSpec.env())
-                                                       .groups(oldContainerSpec.groups())
-                                                       .tty(oldContainerSpec.tty())
-                                                       .build();
-            TaskSpec taskTemplate = TaskSpec.builder()
-                                            .containerSpec(containerSpec)
-                                            .resources(oldServiceSpec.taskTemplate().resources())
-                                            .restartPolicy(oldServiceSpec.taskTemplate().restartPolicy())
-                                            .networks(oldServiceSpec.taskTemplate().networks())
-                                            .placement(oldServiceSpec.taskTemplate().placement())
-                                            .logDriver(oldServiceSpec.taskTemplate().logDriver())
-                                            .build();
-            ServiceSpec serviceSpec = ServiceSpec.builder()
-                                                 .name(oldServiceSpec.name())
-                                                 .mode(oldServiceSpec.mode())
-                                                 .labels(oldServiceSpec.labels())
-                                                 .taskTemplate(taskTemplate)
-                                                 .endpointSpec(oldServiceSpec.endpointSpec())
-                                                 .networks(oldServiceSpec.networks())
-                                                 .updateConfig(oldServiceSpec.updateConfig())
-                                                 .build();
-            dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
+            Service service = dockerClient.inspectService(serviceId);
+            ServiceSpec oldServiceSpec = service.spec();
+            ContainerSpec containerSpec = DockerBuilderHelper.containerSpecBuilder(oldServiceSpec.taskTemplate().containerSpec(),
+                                                                                   ContainerSpecEnum.MOUNTS,
+                                                                                   null);
+            TaskSpec taskSpec = DockerBuilderHelper.taskSpecBuilder(oldServiceSpec.taskTemplate(),
+                                                                    TaskSpecEnum.CONTAINER_SPEC,
+                                                                    containerSpec);
+            ServiceSpec serviceSpec = DockerBuilderHelper.serviceSpecBuilder(oldServiceSpec,
+                                                                             ServiceSpecEnum.TASK_TEMPLATE,
+                                                                             taskSpec);
+            dockerClient.updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "更新服务失败");
@@ -147,20 +172,40 @@ public class ServiceController extends BaseController {
         String target = params.getOrDefault("target", null).toString();
         String aliases = params.getOrDefault("aliases", null).toString();
         try {
-            ServiceSpec oldServiceSpec = dockerClient.inspectService(serviceId).spec();
+            Service service = dockerClient.inspectService(serviceId);
+            ServiceSpec oldServiceSpec = service.spec();
             NetworkAttachmentConfig networkConfig = NetworkAttachmentConfig.builder()
                                                                            .aliases(aliases.split(","))
                                                                            .target(target)
                                                                            .build();
-            ServiceSpec serviceSpec = ServiceSpec.builder()
-                                                 .name(oldServiceSpec.name())
-                                                 .mode(oldServiceSpec.mode())
-                                                 .labels(oldServiceSpec.labels())
-                                                 .taskTemplate(oldServiceSpec.taskTemplate())
-                                                 .endpointSpec(oldServiceSpec.endpointSpec())
-                                                 .networks(networkConfig)
-                                                 .updateConfig(oldServiceSpec.updateConfig())
-                                                 .build();
+            ServiceSpec serviceSpec = DockerBuilderHelper.serviceSpecBuilder(oldServiceSpec,
+                                                                             ServiceSpecEnum.NETWORKS,
+                                                                             networkConfig);
+            dockerClient.updateService(serviceId, service.version().index(), serviceSpec);
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
+        } catch (Exception e) {
+            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
+        }
+    }
+
+    @WebLog
+    @PostMapping(value = "/config")
+    public Map<String, Object> updateConfig(@RequestBody Map<String, Object> params) {
+        String serviceId = params.getOrDefault("serviceId", null).toString();
+        List<ConfigBind> configsBind = JSON.parseObject(Objects.toString(params.get("configsBind"), "[]"),
+                                                        new TypeReference<List<ConfigBind>>() {});
+        try {
+            ServiceSpec oldServiceSpec = dockerClient.inspectService(serviceId).spec();
+            ContainerSpec containerSpec = DockerBuilderHelper.containerSpecBuilder(oldServiceSpec.taskTemplate().containerSpec(),
+                                                                                   ContainerSpecEnum.CONFIG,
+                                                                                   configsBind);
+            TaskSpec taskTemplate = DockerBuilderHelper.taskSpecBuilder(oldServiceSpec.taskTemplate(),
+                                                                        TaskSpecEnum.CONTAINER_SPEC,
+                                                                        containerSpec);
+            ServiceSpec serviceSpec = DockerBuilderHelper.serviceSpecBuilder(oldServiceSpec,
+                                                                             ServiceSpecEnum.TASK_TEMPLATE,
+                                                                             taskTemplate);
             dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
@@ -173,23 +218,21 @@ public class ServiceController extends BaseController {
     @PostMapping(value = "/secret")
     public Map<String, Object> updateSecret(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
+        List<SecretBind> secretsBind = JSON.parseObject(Objects.toString(params.get("secretsBind"), "[]"),
+                                                        new TypeReference<List<SecretBind>>() {});
         try {
-            ServiceSpec serviceSpec = ServiceSpec.builder().build();
-            dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
-            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
-            return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
-        }
-    }
-
-    @WebLog
-    @PostMapping(value = "/config")
-    public Map<String, Object> updateConfig(@RequestBody Map<String, Object> params) {
-        String serviceId = params.getOrDefault("serviceId", null).toString();
-        try {
-            ServiceSpec serviceSpec = ServiceSpec.builder().build();
-            dockerClient.updateService(serviceId, dockerClient.inspectService(serviceId).version().index(), serviceSpec);
+            Service service = dockerClient.inspectService(serviceId);
+            ServiceSpec oldServiceSpec = service.spec();
+            ContainerSpec containerSpec = DockerBuilderHelper.containerSpecBuilder(oldServiceSpec.taskTemplate().containerSpec(),
+                                                                                   ContainerSpecEnum.SECRETS,
+                                                                                   secretsBind);
+            TaskSpec taskSpec = DockerBuilderHelper.taskSpecBuilder(oldServiceSpec.taskTemplate(),
+                                                                    TaskSpecEnum.CONTAINER_SPEC,
+                                                                    containerSpec);
+            ServiceSpec serviceSpec = DockerBuilderHelper.serviceSpecBuilder(oldServiceSpec,
+                                                                             ServiceSpecEnum.TASK_TEMPLATE,
+                                                                             taskSpec);
+            dockerClient.updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "更新服务失败");

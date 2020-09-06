@@ -15,7 +15,7 @@ public class StringHelper {
      * @param resource
      * @return
      */
-    public static Map<String, Object> stringConvertMap(String resource) {
-        return JSON.parseObject(resource, new TypeReference<Map<String, Object>>() {});
+    public static <K, V> Map<K, V> stringConvertMap(String resource) {
+        return JSON.parseObject(resource, new TypeReference<Map<K, V>>() {});
     }
 }
