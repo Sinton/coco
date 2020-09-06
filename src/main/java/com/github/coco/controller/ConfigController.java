@@ -31,11 +31,13 @@ public class ConfigController extends BaseController {
     public Map<String, Object> createConfig(@RequestBody Map<String, Object> params) {
         String name = params.getOrDefault("name", null).toString();
         String data = params.getOrDefault("data", null).toString();
+        Map<String, String> labels = JSON.parseObject(Objects.toString(params.get("labels"), ""),
+                                                      new TypeReference<Map<String, String>>() {});
         try {
             ConfigSpec configSpec = ConfigSpec.builder()
                                               .name(name)
                                               .data(Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.UTF_8)))
-                                              .labels(null)
+                                              .labels(labels.isEmpty() ? null : labels)
                                               .build();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                dockerClient.createConfig(configSpec));
@@ -46,9 +48,29 @@ public class ConfigController extends BaseController {
     }
 
     @WebLog
+    @PostMapping(value = "/clone")
+    public Map<String, Object> cloneConfig(@RequestBody Map<String, Object> params) {
+        String configId = Objects.toString(params.get("configId"), "");
+        String name     = Objects.toString(params.get("name"), "");
+        try {
+            ConfigSpec configSpec = dockerClient.inspectConfig(configId).configSpec();
+            ConfigSpec cloneConfigSpec = ConfigSpec.builder()
+                                                   .name(name)
+                                                   .data(configSpec.data())
+                                                   .labels(configSpec.labels())
+                                                   .build();
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
+                                               dockerClient.createConfig(cloneConfigSpec));
+        } catch (Exception e) {
+            LoggerHelper.fmtError(getClass(), e, "克隆容器配置项失败");
+            return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
+        }
+    }
+
+    @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeConfig(@RequestBody Map<String, Object> params) {
-        String configId = params.getOrDefault("configId", null).toString();
+        String configId = Objects.toString(params.get("configId"), "");
         try {
             dockerClient.deleteConfig(configId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除配置项成功");

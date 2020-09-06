@@ -16,4 +16,16 @@ public class GlobalConstant {
      * 镜像标签分隔符
      */
     public static final String IMAGE_TAG_DELIMITER   = ":";
+    /**
+     * 服务标签
+     */
+    public static final String SERVICE_LABEL         = "com.docker.swarm.service.id";
+    /**
+     * Swarm应用栈标签
+     */
+    public static final String STACK_LABEL           = "com.docker.stack.namespace";
+    /**
+     * Compose应用栈标签
+     */
+    public static final String COMPOSE_LABEL         = "com.docker.compose.project";
 }
