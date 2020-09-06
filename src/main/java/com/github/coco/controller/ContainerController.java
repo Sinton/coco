@@ -33,9 +33,13 @@ public class ContainerController extends BaseController {
     public static class DeployContainer {
         private String name;
         private String image;
+        private Boolean autoRemove;
+        private Boolean publishAllPorts;
+        private Boolean privileged;
         private String cmds;
         private String entrypoint;
-        private Map<String, Objects> env;
+        private Map<String, Object> labels;
+        private Map<String, Object> envs;
         private Map<String, String> portMapping;
     }
 
@@ -49,11 +53,15 @@ public class ContainerController extends BaseController {
     @PostMapping(value = "/create")
     public Map<String, Object> createContainer(@RequestBody Map<String, Object> params) {
         DeployContainer deployContainer = JSON.parseObject(JSON.toJSONString(params), DeployContainer.class);
-        String image                    = deployContainer.getImage();
         String name                     = deployContainer.getName();
+        String image                    = deployContainer.getImage();
+        boolean autoRemove              = deployContainer.getAutoRemove();
+        boolean publishAllPorts         = deployContainer.getPublishAllPorts();
+        boolean privileged              = deployContainer.getPrivileged();
         String cmds                     = deployContainer.getCmds();
         String entrypoint               = deployContainer.getEntrypoint();
-        Map<String, Objects> env        = deployContainer.getEnv();
+        Map<String, Object> labels      = deployContainer.getLabels();
+        Map<String, Object> envs        = deployContainer.getEnvs();
         Map<String, String> portMapping = deployContainer.getPortMapping();
         try {
             Set<String> ports = portMapping.keySet();
@@ -64,10 +72,14 @@ public class ContainerController extends BaseController {
                 portBindings.put(port, hostPorts);
             }
             HostConfig hostConfig = HostConfig.builder()
+                                              .autoRemove(autoRemove)
                                               .portBindings(portBindings)
+                                              .publishAllPorts(publishAllPorts)
+                                              .privileged(privileged)
                                               .build();
 
             ContainerConfig config = ContainerConfig.builder()
+                                                    .image(image)
                                                     //.cmd(cmds.split(","))
                                                     //.entrypoint(entrypoint.split(","))
                                                     //.env(env.split(","))
@@ -76,7 +88,6 @@ public class ContainerController extends BaseController {
                                                     .attachStdin(true)
                                                     .attachStdout(true)
                                                     .attachStderr(true)
-                                                    .image(image)
                                                     .tty(false)
                                                     .build();
             String containerId = dockerClient.createContainer(config, name).id();
