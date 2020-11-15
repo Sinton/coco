@@ -16,7 +16,8 @@ public interface UserDao extends BaseDAO {
      * @param user
      * @return
      */
-    @Insert("INSERT FROM t_user () VALUES ()")
+    @Insert("INSERT INTO t_user (username, salt, password, nickname, create_time) " +
+            "VALUES (#{username}, #{salt}, #{password}, #{nickname}, #{createTime});")
     int insertUser(User user);
 
     /**
@@ -25,7 +26,7 @@ public interface UserDao extends BaseDAO {
      * @param user
      * @return
      */
-    @Delete("Delete FROM t_user where ")
+    @Delete("DELETE FROM t_user WHERE uid = #{uid}")
     int deleteUser(User user);
 
     /**
@@ -34,7 +35,7 @@ public interface UserDao extends BaseDAO {
      * @param user
      * @return
      */
-    @Update("UPDATE t_user set ")
+    @Update("UPDATE t_user SET ")
     int updateUser(User user);
 
     /**
@@ -52,6 +53,6 @@ public interface UserDao extends BaseDAO {
      * @param user
      * @return
      */
-    @Select("SELECT * FROM t_user WHERE uid = #{uid}")
+    @Select("SELECT * FROM t_user WHERE username = #{username}")
     User selectUser(User user);
 }

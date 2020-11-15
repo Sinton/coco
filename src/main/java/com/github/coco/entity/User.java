@@ -9,11 +9,18 @@ import java.io.Serializable;
  */
 @Data
 public class User {
-    private String uid;
-    private String nickname;
+    private Integer uid;
     private String username;
-    private String password;
     private String salt;
+    private String password;
+    private String nickname;
+    private String avatar;
+    private Integer status;
     private String email;
+    private String telephone;
+    private String lang;
+    private String lastLoginIp;
     private Long lastLoginTime;
+    private Integer creatorId;
+    private Long createTime;
 }

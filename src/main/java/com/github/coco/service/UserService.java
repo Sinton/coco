@@ -7,12 +7,19 @@ import com.github.coco.entity.User;
  */
 public interface UserService {
     /**
+     * 创建用户
+     *
+     * @param user
+     */
+    void createUser(User user);
+
+    /**
      * 根据用户ID获取用户信息
      *
      * @param uid
      * @return
      */
-    User getUserById(String uid);
+    User getUserById(Integer uid);
 
     /**
      * 根据用户ID获取用户信息
@@ -21,4 +28,14 @@ public interface UserService {
      * @return
      */
     User getUserById(User user);
+
+    /**
+     * 根据用户名获取用户信息
+     *
+     * @param username
+     * @return
+     */
+    User getUserByName(String username);
+
+    User getUserByName(User user);
 }

@@ -38,9 +38,13 @@ public class ApiResponseDTO {
      * @return
      */
     public Map<String, Object> returnResult(int code, Object data) {
+        return returnResult(code, data, "data");
+    }
+
+    public Map<String, Object> returnResult(int code, Object data, String dataKey) {
         Map<String, Object> result = new HashMap<>(2);
         result.put("code", code);
-        result.put("data", data);
+        result.put(dataKey, data);
         return result;
     }
 }
