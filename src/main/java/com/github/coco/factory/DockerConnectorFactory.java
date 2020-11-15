@@ -1,5 +1,6 @@
 package com.github.coco.factory;
 
+import com.github.coco.constant.dict.WhetherEnum;
 import com.github.coco.entity.Endpoint;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
@@ -20,19 +21,18 @@ public class DockerConnectorFactory extends BasePooledObjectFactory<DockerClient
     }
 
     public DockerConnectorFactory() {
-        this.endpoint.setIp(DockerHost.defaultAddress());
+        this.endpoint.setPublicIp(DockerHost.defaultAddress());
         this.endpoint.setPort(DockerHost.defaultPort());
     }
 
     @Override
     public DockerClient create() {
         String uri;
-        if (StringUtils.isNotBlank(endpoint.getIp())) {
-            DockerHost.from(endpoint.getIp(), null);
-            String scheme = StringUtils.isNotBlank(endpoint.getTls()) ? "https" : "http";
+        if (StringUtils.isNotBlank(endpoint.getPublicIp())) {
+            String scheme = endpoint.getTlsEnable().equals(WhetherEnum.YES.getCode()) ? "https" : "http";
             uri = String.format("%s://%s:%s",
                                 scheme,
-                                endpoint.getIp(),
+                                endpoint.getPublicIp(),
                                 endpoint.getPort() != null ? endpoint.getPort() : DockerHost.defaultPort());
         } else {
             uri = String.format("http://%s:%s", DockerHost.defaultAddress(), DockerHost.defaultPort());

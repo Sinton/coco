@@ -22,6 +22,10 @@ public enum WhetherEnum {
         this.value = value;
     }
 
+    public int getCode() {
+        return code;
+    }
+
     public boolean getValue() {
         return value;
     }
