@@ -1,10 +1,12 @@
 spring:
   profiles:
     active: dev
-  #mvc:
-  #  view:
-  #    prefix: /views/
-  #    suffix: .html
+  mvc:
+    static-path-pattern: /**
+    # 默认值为 classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
+    view:
+      #prefix: /views/
+      suffix: .html
   servlet:
     multipart:
       max-file-size: 50MB
@@ -38,6 +40,8 @@ mybatis:
   configuration:
     use-generated-keys: true
     map-underscore-to-camel-case: true
+    log-prefix: "STDOUT_LOGGING"
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 #============================================================================
 # Netty Socket-IO
