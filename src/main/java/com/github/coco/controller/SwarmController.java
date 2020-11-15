@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Yan
@@ -22,11 +23,12 @@ public class SwarmController extends BaseController {
     @WebLog
     @PostMapping(value = "/init")
     public Map<String, Object> initSwarm(@RequestBody Map<String, Object> params) {
+        String ip = Objects.toString(params.get("ip"), "192.168.3.140");
         try {
             if (dockerClient.info().swarm() == null) {
                 SwarmInit swarmInit = SwarmInit.builder()
-                                               .advertiseAddr("192.168.3.140")
-                                               .listenAddr("192.168.3.140")
+                                               .advertiseAddr(ip)
+                                               .listenAddr(ip)
                                                .build();
                 dockerClient.initSwarm(swarmInit);
             } else {
