@@ -38,8 +38,11 @@ public class ContainerController extends BaseController {
         private Boolean autoRemove = false;
         private Boolean publishAllPorts = false;
         private Boolean privileged = false;
-        private String cmds;
+        private String command;
         private String entrypoint;
+        private String workingDir;
+        private String console;
+        private String user;
         private Map<String, String> ports = new HashMap<>(16);
         private Map<String, String> envs = new HashMap<>(16);
         private Map<String, String> labels = new HashMap<>(16);
@@ -63,8 +66,11 @@ public class ContainerController extends BaseController {
         Map<String, String> ports       = deployContainer.getPorts();
         Map<String, String> envs        = deployContainer.getEnvs();
         Map<String, String> labels      = deployContainer.getLabels();
-        String cmds                     = deployContainer.getCmds();
+        String command                  = deployContainer.getCommand();
         String entrypoint               = deployContainer.getEntrypoint();
+        String workingDir               = deployContainer.getWorkingDir();
+        String console                  = deployContainer.getConsole();
+        String user                     = deployContainer.getUser();
         try {
             Set<String> containerExposedPorts = ports.keySet();
             Map<String, List<PortBinding>> portBindings = new HashMap<>(4);
@@ -85,8 +91,24 @@ public class ContainerController extends BaseController {
                                                              .attachStdout(true)
                                                              .attachStderr(true)
                                                              .image(image)
-                                                             .hostConfig(hostConfig)
-                                                             .tty(false);
+                                                             .hostConfig(hostConfig);
+            if (StringUtils.isNotBlank(command)) {
+                builder.cmd(command.split(","));
+            }
+            if (StringUtils.isNotBlank(entrypoint)) {
+                builder.entrypoint(entrypoint.split(","));
+            }
+            if (StringUtils.isNotBlank(workingDir)) {
+                builder.workingDir(workingDir);
+            }
+            if (StringUtils.isNotBlank(console)) {
+                if (console.startsWith("t")) {
+                    builder.tty(true);
+                }
+            }
+            if (StringUtils.isNotBlank(user)) {
+                builder.user(user);
+            }
             if (!containerExposedPorts.isEmpty()) {
                 builder.exposedPorts(containerExposedPorts);
             }
@@ -98,9 +120,6 @@ public class ContainerController extends BaseController {
             }
             if (!labels.isEmpty()) {
                 builder.labels(labels);
-            }
-            if (StringUtils.isNotBlank(cmds)) {
-                builder.cmd(cmds.split(","));
             }
             String containerId = dockerClient.createContainer(builder.build(), name).id();
             dockerClient.startContainer(containerId);
