@@ -84,9 +84,10 @@ public class ImageController extends BaseController {
     @WebLog
     @PostMapping(value = "/export")
     public byte[] exportImage(@RequestBody Map<String, Object> params) {
-        String imageFile = "";
+        String[] imageIds = Objects.toString(params.get("imageIds"), "").split(",");
+        String imageFile  = "";
         try {
-            dockerClient.save(null);
+            dockerClient.save(imageIds);
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "导出镜像文件[%s]失败", imageFile);
         }
