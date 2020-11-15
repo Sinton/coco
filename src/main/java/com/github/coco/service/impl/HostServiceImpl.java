@@ -22,13 +22,13 @@ public class HostServiceImpl implements HostService {
     }
 
     @Override
-    public void modifyHost(Host host) {
-        hostDAO.updateHost(host);
+    public int removeHost(Host host) {
+        return hostDAO.deleteHost(host);
     }
 
     @Override
-    public int removeHost(Host host) {
-        return hostDAO.deleteHost(host);
+    public void modifyHost(Host host) {
+        hostDAO.updateHost(host);
     }
 
     @Override

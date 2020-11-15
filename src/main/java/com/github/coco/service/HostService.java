@@ -10,9 +10,9 @@ import java.util.List;
 public interface HostService {
     void createHost(Host host);
 
-    void modifyHost(Host host);
-
     int removeHost(Host host);
+
+    void modifyHost(Host host);
 
     Host getHostById(String id);
 
