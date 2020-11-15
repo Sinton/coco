@@ -34,7 +34,11 @@ public interface EndpointDAO extends BaseDAO {
      * @param endpoint
      * @return
      */
-    @Update("UPDATE t_endpoint SET ip = #{ip} WHERE id = #{id}")
+    @Update("UPDATE t_endpoint SET name = #{name}, port = #{port}, public_ip = #{publicIp}, " +
+            "endpoint_url = #{endpointUrl}, endpoint_type = #{endpointType}, status = #{status}, " +
+            "resources = #{resources}, tls_enable = #{tlsEnable}, tls_config = #{tlsConfig}, " +
+            "docker_config = #{dockerConfig}, update_date_time = #{updateDateTime} " +
+            "WHERE id = #{id}")
     int updateEndpoint(Endpoint endpoint);
 
     @Select("SELECT * FROM t_endpoint WHERE id = #{id}")

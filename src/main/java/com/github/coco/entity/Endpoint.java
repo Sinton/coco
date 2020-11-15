@@ -11,8 +11,14 @@ import lombok.Data;
 public class Endpoint {
     private String id;
     private String name;
-    private String ip;
+    private String publicIp;
     private Integer port;
-    private String url;
-    private String tls;
+    private String endpointUrl;
+    private Integer endpointType;
+    private Integer status;
+    private String resources;
+    private String dockerConfig;
+    private Integer tlsEnable;
+    private String tlsConfig;
+    private Long updateDateTime;
 }
