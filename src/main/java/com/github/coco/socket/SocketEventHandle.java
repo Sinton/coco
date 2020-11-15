@@ -38,7 +38,7 @@ public class SocketEventHandle {
     public static final String SOCKET_EVENT_TERMINAL                   = "terminal";
     public static final String SOCKET_EVENT_CONTAINER_TERMINAL         = "containerTerminal";
     public static final String SOCKET_EVENT_CONNECT_CONTAINER_TERMINAL = "connectContainerTerminal";
-    private static DockerClient dockerClient = DockerConnectorHelper.getDockerClient("192.168.3.140", 2375);
+    private static DockerClient dockerClient = DockerConnectorHelper.borrowDockerClient("192.168.3.140", 2375);
 
     public static volatile Map<String, SocketIOClient> clientMap = new ConcurrentHashMap<>(16);
     private static Map<String, ExecSession> execSessionMap = new ConcurrentHashMap<>(16);
