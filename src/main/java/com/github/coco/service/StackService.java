@@ -9,10 +9,16 @@ import java.util.List;
  */
 public interface StackService {
     void createStack(Stack stack);
-    void deleteStack(Stack stack);
-    int deleteStack(String stackId);
-    int updateStack(Stack stack);
+
+    int removeStack(Stack stack);
+
+    int removeStack(String stackId);
+
+    int modifyStack(Stack stack);
+
     Stack getStack(Stack stack);
+
     Stack getStack(String stackId);
-    List<Stack> getStacks();
+
+    List<Stack> getStacks(String endpoint);
 }

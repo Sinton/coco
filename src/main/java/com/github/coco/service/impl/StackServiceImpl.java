@@ -3,6 +3,7 @@ package com.github.coco.service.impl;
 import com.github.coco.dao.StackDAO;
 import com.github.coco.entity.Stack;
 import com.github.coco.service.StackService;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -10,32 +11,34 @@ import java.util.List;
 /**
  * @author Yan
  */
+@Service
 public class StackServiceImpl implements StackService {
     @Resource
     private StackDAO stackDAO;
 
     @Override
     public void createStack(Stack stack) {
+        stackDAO.insertStack(stack);
     }
 
     @Override
-    public void deleteStack(Stack stack) {
-
+    public int removeStack(Stack stack) {
+        return stackDAO.deleteStack(stack);
     }
 
     @Override
-    public int deleteStack(String stackId) {
+    public int removeStack(String stackId) {
         return 0;
     }
 
     @Override
-    public int updateStack(Stack stack) {
+    public int modifyStack(Stack stack) {
         return 0;
     }
 
     @Override
     public Stack getStack(Stack stack) {
-        return null;
+        return stackDAO.selectStack(stack);
     }
 
     @Override
@@ -44,7 +47,7 @@ public class StackServiceImpl implements StackService {
     }
 
     @Override
-    public List<Stack> getStacks() {
-        return null;
+    public List<Stack> getStacks(String endpoint) {
+        return stackDAO.selectStacks(endpoint);
     }
 }
