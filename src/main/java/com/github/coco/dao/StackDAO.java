@@ -23,5 +23,5 @@ public interface StackDAO extends BaseDAO {
     Stack selectStack(Stack stack);
 
     @Select("SELECT * FROM t_stack WHERE endpoint = #{endpoint};")
-    List<Stack> selectStacks(String endpoint);
+    List<Stack> selectStacks(@Param("endpoint") String endpoint);
 }
