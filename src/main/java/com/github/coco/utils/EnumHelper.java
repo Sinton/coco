@@ -30,7 +30,7 @@ public class EnumHelper {
         if (enums != null) {
             return getEnumType(enums, enumValue, defaultEnum, matchMethod == null ? MATCH_METHOD : matchMethod);
         }
-        return null;
+        return defaultEnum;
     }
 
     private static <T> T getEnumType(Enum<?>[] enumClass, String enumValue, T defaultEnum, String matchMethod) {
