@@ -15,3 +15,11 @@ create table t_user
     creator_id      integer,
     create_time     integer
 );
+
+create table t_notification
+(
+    id          integer not null constraint t_notification_pk primary key autoincrement,
+    content     text,
+    status      integer default 0 not null,
+    create_date integer
+);
