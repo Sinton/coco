@@ -7,25 +7,37 @@ public class GlobalConstant {
     /**
      * 成功请求状态码
      */
-    public static final int SUCCESS_CODE             = 2000;
+    public static final int SUCCESS_CODE           = 2000;
     /**
-     * 镜像默认版本名称
+     * 冒号
      */
-    public static final String IMAGE_DEFAULT_VERSION = "latest";
+    public static final String SPACEMARK_COLON     = ":";
     /**
-     * 镜像标签分隔符
+     * 逗号
      */
-    public static final String IMAGE_TAG_DELIMITER   = ":";
+    public static final String SPACEMARK_COMMA     = ",";
     /**
-     * 服务标签
+     * 横杠
      */
-    public static final String SERVICE_LABEL         = "com.docker.swarm.service.id";
+    public static final String SPACEMARK_DASH      = "-";
     /**
-     * Swarm应用栈标签
+     * 点号
      */
-    public static final String STACK_LABEL           = "com.docker.stack.namespace";
+    public static final String SPACEMARK_DOT       = ".";
     /**
-     * Compose应用栈标签
+     * 等号
      */
-    public static final String COMPOSE_LABEL         = "com.docker.compose.project";
+    public static final String SPACEMARK_EQUAL     = "=";
+    /**
+     * 井号
+     */
+    public static final String SPACEMARK_POUND     = "#";
+    /**
+     * 分号
+     */
+    public static final String SPACEMARK_SEMICOLON = ";";
+    /**
+     * 下划线
+     */
+    public static final String SPACEMARK_UNDERLINE = "_";
 }
