@@ -6,7 +6,7 @@ import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.entity.User;
 import com.github.coco.service.UserService;
-import com.github.coco.utils.DockerConnectorHelper;
+import com.github.coco.utils.EncryptHelper;
 import com.github.coco.utils.JwtHelper;
 import com.github.coco.utils.LoggerHelper;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,25 +32,24 @@ public class AuthController extends BaseController {
     public Map<String, Object> login(@RequestBody Map<String, Object> params) {
         String username = params.get("username").toString();
         String password = params.get("password").toString();
-        Map<String, Object> response = new HashMap<>(16);
+        Map<String, Object> result = new HashMap<>(16);
         try {
             User user = userService.getUserByName(username);
             if (user != null) {
-                String jwt = JwtHelper.sign(username);
-                Map<String, Object> result = new HashMap<>(16);
-                result.putAll(JSON.parseObject(JSON.toJSONString(user), new TypeReference<Map<String, Object>>() {}));
-                result.put("deleted", "0");
-                result.put("roleId", "admin");
-                //result.put("token", "'4291d7da9005377ec9aec4a71ea837f'");
-                result.put("token", jwt);
-                result.put("jwt", jwt);
-                response.put("code", 2000);
-                response.put("result", result);
-                dockerClient = DockerConnectorHelper.borrowDockerClient("192.168.3.140", 2375);
-                dockerClients.put(result.get("token").toString(), dockerClient);
+                if (user.getPassword().equals(EncryptHelper.md5(password + user.getSalt()))) {
+                    String jwt = JwtHelper.sign(username);
+                    result.putAll(JSON.parseObject(JSON.toJSONString(user), new TypeReference<Map<String, Object>>() {}));
+                    result.put("deleted", "0");
+                    result.put("roleId", "admin");
+                    result.put("token", jwt);
+                    result.put("jwt", jwt);
+                    return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), result);
+                } else {
+                    return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "用户密码错误");
+                }
             } else {
+                return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "用户不存在");
             }
-            return response;
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "登陆失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "登陆失败");
@@ -60,21 +59,18 @@ public class AuthController extends BaseController {
     @WebLog
     @PostMapping(value = "/logout")
     public Map<String, Object> logout() {
-        Map<String, Object> result = new HashMap<>(2);
-        return result;
+        return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), "");
     }
 
     @WebLog
     @PostMapping(value = "/smsCaptcha")
     public Map<String, Object> smsCaptcha() {
-        Map<String, Object> result = new HashMap<>(2);
-        return result;
+        return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), "");
     }
 
     @WebLog
-    @PostMapping(value = "/twofactor")
+    @PostMapping(value = "/twoFactor")
     public Map<String, Object> twofactor() {
-        Map<String, Object> result = new HashMap<>(2);
-        return result;
+        return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), "");
     }
 }

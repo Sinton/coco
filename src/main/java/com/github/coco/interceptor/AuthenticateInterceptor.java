@@ -1,6 +1,8 @@
 package com.github.coco.interceptor;
 
 import com.alibaba.fastjson.JSON;
+import com.github.coco.constant.GlobalConstant;
+import com.github.coco.dto.ApiResponseDTO;
 import com.github.coco.utils.JwtHelper;
 import com.github.coco.utils.LoggerHelper;
 import org.apache.commons.lang3.StringUtils;
@@ -30,19 +32,20 @@ public class AuthenticateInterceptor implements HandlerInterceptor {
             return true;
         }
         // 判断token是否为空是否有效
-        String token = request.getHeader("access-token");
+        String token = request.getHeader("Authorization");
         if (StringUtils.isNotBlank(token)) {
-            if (!JwtHelper.verity(token)) {
+            if (JwtHelper.verity(token)) {
+                return true;
+            } else {
                 printJson(response, "");
+                return false;
             }
-            return false;
         }
         return true;
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-        // 重置token失效时间
         resetTokenExpireTime(request);
         response.setHeader("Access-Control-Allow-Credentials", "true");
         response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With, token");
@@ -51,13 +54,17 @@ public class AuthenticateInterceptor implements HandlerInterceptor {
         response.setHeader("Access-Control-Max-Age", "3600");
     }
 
+    /**
+     * 重置Token失效时间
+     *
+     * @param request
+     */
     private void resetTokenExpireTime(HttpServletRequest request) {
-        // TODO 重置
     }
 
     private static void printJson(HttpServletResponse response, String code) {
-        // ResponseResult responseResult = new ResponseResult(10086, false, "token过期,请重新登陆", null);
-        String content = JSON.toJSONString("");
+        ApiResponseDTO apiResponseDTO = new ApiResponseDTO();
+        String content = JSON.toJSONString(apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "token过期,请重新登陆"));
         printContent(response, content);
     }
 

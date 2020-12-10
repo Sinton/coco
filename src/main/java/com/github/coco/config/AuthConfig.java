@@ -12,7 +12,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 public class AuthConfig implements WebMvcConfigurer {
-    private static final String[] PATH_WHITE_LIST = {"/**/login", "/**/logout", "/**/register"};
+    private static final String[] PATH_WHITE_LIST = {"/**/login", "/**/logout", "/**/register", "/**/twoFactor"};
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
