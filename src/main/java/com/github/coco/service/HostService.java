@@ -18,5 +18,5 @@ public interface HostService {
 
     Host getHostById(Host host);
 
-    List<Host> getHosts(Host host);
+    List<Host> getHosts();
 }

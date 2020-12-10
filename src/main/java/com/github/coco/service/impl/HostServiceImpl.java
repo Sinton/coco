@@ -42,7 +42,7 @@ public class HostServiceImpl implements HostService {
     }
 
     @Override
-    public List<Host> getHosts(Host host) {
+    public List<Host> getHosts() {
         return hostDAO.selectHosts();
     }
 }

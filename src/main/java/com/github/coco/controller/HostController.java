@@ -2,6 +2,7 @@ package com.github.coco.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.WhetherEnum;
 import com.github.coco.entity.Host;
@@ -73,7 +74,7 @@ public class HostController extends BaseController {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
         int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
         return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                           apiResponseDTO.tableResult(pageNo, pageSize, hostService.getHosts(Host.builder().build())));
+                                           apiResponseDTO.tableResult(pageNo, pageSize, hostService.getHosts()));
     }
 
     @WebLog
@@ -84,6 +85,7 @@ public class HostController extends BaseController {
         if (EnumHelper.getEnumType(WhetherEnum.class, host.getDockerized().toString()).getValue()) {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "主机已Docker化");
         } else {
+            // TODO 对宿主机进行Docker化
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, null);
         }
     }
