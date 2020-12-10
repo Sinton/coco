@@ -1,5 +1,6 @@
 package com.github.coco.utils;
 
+import com.github.coco.constant.dict.EndpointTypeEnum;
 import com.github.coco.constant.dict.WhetherEnum;
 import com.github.coco.entity.Endpoint;
 import com.github.coco.factory.DockerConnectorFactory;
@@ -21,6 +22,7 @@ public class DockerConnectorHelper {
                                     .publicIp(ip)
                                     .port(port)
                                     .tlsEnable(WhetherEnum.NO.getCode())
+                                    .endpointType(EndpointTypeEnum.URL.getCode())
                                     .build();
         return borrowDockerClient(endpoint);
     }
