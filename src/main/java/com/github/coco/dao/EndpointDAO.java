@@ -1,6 +1,7 @@
 package com.github.coco.dao;
 
 import com.github.coco.entity.Endpoint;
+import com.github.coco.provider.EndpointSqlProvider;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -15,8 +16,8 @@ public interface EndpointDAO extends BaseDAO {
      *
      * @param endpoint
      */
-    @Insert("INSERT INTO t_endpoint(ip, port, name, url) " +
-            "VALUES (#{ip}, #{port}, #{name}, #{url})")
+    @Insert("INSERT INTO t_endpoint(public_ip, port, name, endpoint_url) " +
+            "VALUES (#{publicIp}, #{port}, #{name}, #{endpointUrl})")
     void insertEndpoint(Endpoint endpoint);
 
     /**
@@ -25,8 +26,8 @@ public interface EndpointDAO extends BaseDAO {
      * @param id
      * @return
      */
-    @Delete("DELETE FROM t_endpoint where id = #{id}")
-    int deleteEndpoint(String id);
+    @Delete("DELETE FROM t_endpoint WHERE id = #{id}")
+    int deleteEndpoint(@Param("id") Integer id);
 
     /**
      * 修改Endpoint
@@ -34,24 +35,33 @@ public interface EndpointDAO extends BaseDAO {
      * @param endpoint
      * @return
      */
-    @Update("UPDATE t_endpoint SET name = #{name}, port = #{port}, public_ip = #{publicIp}, " +
-            "endpoint_url = #{endpointUrl}, endpoint_type = #{endpointType}, status = #{status}, " +
-            "resources = #{resources}, tls_enable = #{tlsEnable}, tls_config = #{tlsConfig}, " +
-            "docker_config = #{dockerConfig}, update_date_time = #{updateDateTime} " +
-            "WHERE id = #{id}")
+    @UpdateProvider(type = EndpointSqlProvider.class, method = "updateEndpoint")
     int updateEndpoint(Endpoint endpoint);
-
-    @Select("SELECT * FROM t_endpoint WHERE id = #{id}")
-    Endpoint selectEndpoint(Endpoint endpoint);
-
-    @Select("SELECT * FROM t_endpoint WHERE id = #{id}")
-    Endpoint selectEndpointById(String id);
 
     /**
      * 查询Endpoint
      *
+     * @param endpoint
      * @return
      */
-    @Select("SELECT * FROM t_endpoint")
-    List<Endpoint> selectEndpoints();
+    @SelectProvider(type = EndpointSqlProvider.class, method = "selectEndpoint")
+    Endpoint selectEndpoint(Endpoint endpoint);
+
+    /**
+     * 查询Endpoint列表
+     *
+     * @param offset
+     * @param limit
+     * @return
+     */
+    @Select("SELECT * FROM t_endpoint LIMIT #{offset},#{limit}")
+    List<Endpoint> selectEndpoints(@Param("offset") int offset, @Param("limit") int limit);
+
+    /**
+     * 查询Endpoint总数
+     *
+     * @return
+     */
+    @Select("SELECT COUNT(*) AS total")
+    int selectEndpointTotal();
 }

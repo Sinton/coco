@@ -10,13 +10,13 @@ import java.util.List;
 public interface EndpointService {
     void createEndpoint(Endpoint endpoint);
 
-    void removeEndpoint(String id);
+    void removeEndpoint(Integer id);
 
     int modifyEndpoint(Endpoint endpoint);
 
     Endpoint getEndpoint(Endpoint endpoint);
 
-    Endpoint getEndpointById(String id);
+    List<Endpoint> getEndpoints(int pageNo, int pageSize);
 
-    List<Endpoint> getEndpoints();
+    int getEndpointTotal();
 }

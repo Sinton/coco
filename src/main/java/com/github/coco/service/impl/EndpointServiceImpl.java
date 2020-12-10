@@ -22,7 +22,7 @@ public class EndpointServiceImpl implements EndpointService {
     }
 
     @Override
-    public void removeEndpoint(String id) {
+    public void removeEndpoint(Integer id) {
         endpointDAO.deleteEndpoint(id);
     }
 
@@ -37,12 +37,12 @@ public class EndpointServiceImpl implements EndpointService {
     }
 
     @Override
-    public Endpoint getEndpointById(String id) {
-        return endpointDAO.selectEndpointById(id);
+    public List<Endpoint> getEndpoints(int pageNo, int pageSize) {
+        return endpointDAO.selectEndpoints((pageNo - 1) * pageSize, pageSize);
     }
 
     @Override
-    public List<Endpoint> getEndpoints() {
-        return endpointDAO.selectEndpoints();
+    public int getEndpointTotal() {
+        return endpointDAO.selectEndpointTotal();
     }
 }

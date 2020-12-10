@@ -1,6 +1,7 @@
 package com.github.coco.schedule;
 
 import com.alibaba.fastjson.JSON;
+import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.dict.EndpointStatusEnum;
 import com.github.coco.service.EndpointService;
 import com.github.coco.service.StackService;
@@ -30,7 +31,8 @@ public class SyncEndpointTask {
     private StackService stackService;
 
     public void syncEndpoints() {
-        endpointService.getEndpoints().forEach(endpoint -> {
+        int endpointTotal = endpointService.getEndpointTotal();
+        endpointService.getEndpoints(DbConstant.PAGE_NO, endpointTotal).forEach(endpoint -> {
             DockerClient dockerClient = DockerConnectorHelper.borrowDockerClient(endpoint);
             try {
                 if (dockerClient != null) {
