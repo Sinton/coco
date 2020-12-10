@@ -22,14 +22,6 @@ public interface UserService {
     User getUserById(Integer uid);
 
     /**
-     * 根据用户ID获取用户信息
-     *
-     * @param user
-     * @return
-     */
-    User getUserById(User user);
-
-    /**
      * 根据用户名获取用户信息
      *
      * @param username
@@ -37,5 +29,5 @@ public interface UserService {
      */
     User getUserByName(String username);
 
-    User getUserByName(User user);
+    User getUserByLogin(String username, String password);
 }

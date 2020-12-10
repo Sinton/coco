@@ -28,11 +28,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getUserById(User user) {
-        return userDao.selectUser(user);
-    }
-
-    @Override
     public User getUserByName(String username) {
         User user = new User();
         user.setUsername(username);
@@ -40,7 +35,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getUserByName(User user) {
-        return userDao.selectUser(user);
+    public User getUserByLogin(String username, String password) {
+        return null;
     }
 }
