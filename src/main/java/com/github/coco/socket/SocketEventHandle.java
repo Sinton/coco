@@ -17,6 +17,7 @@ import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerHost;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Component;
@@ -115,7 +116,7 @@ public class SocketEventHandle {
         Map<String, Object> args = new HashMap<>(2);
         args.put("Detach", false);
         args.put("Tty", true);
-        Socket socket = new Socket(dockerClient.getHost(), 2375);
+        Socket socket = new Socket(dockerClient.getHost(), DockerHost.defaultPort());
         socket.setKeepAlive(true);
         StringBuilder httpHeader = new StringBuilder().append("POST /exec/")
                                                       .append(execId)

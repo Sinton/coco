@@ -1,5 +1,7 @@
 package com.github.coco.schedule;
 
+import com.github.coco.constant.DbConstant;
+import com.github.coco.constant.DockerConstant;
 import com.github.coco.constant.dict.StackTypeEnum;
 import com.github.coco.entity.Stack;
 import com.github.coco.service.EndpointService;
@@ -21,9 +23,6 @@ import java.util.stream.Collectors;
  */
 @Component
 public class SyncStackTask {
-    private static final String SWARM_STACK_LABEL   = "com.docker.stack.namespace";
-    private static final String COMPOSE_STACK_LABEL = "com.docker.compose.project";
-
     @Resource
     private EndpointService endpointService;
 
@@ -35,7 +34,7 @@ public class SyncStackTask {
         List<String> composeStacks = new ArrayList<>();
         List<String> dbSwarmStacks = new ArrayList<>();
         List<String> dbComposeStacks = new ArrayList<>();
-        endpointService.getEndpoints().forEach(endpoint -> {
+        endpointService.getEndpoints(DbConstant.PAGE_NO, DbConstant.PAGE_SIZE).forEach(endpoint -> {
             DockerClient dockerClient = DockerConnectorHelper.borrowDockerClient(endpoint);
             try {
                 if (dockerClient != null) {
@@ -43,13 +42,13 @@ public class SyncStackTask {
                     dockerClient.listContainers(DockerClient.ListContainersParam.allContainers()).forEach(container -> {
                         if (container.labels() != null && !container.labels().isEmpty()) {
                             String stackName;
-                            if (container.labels().containsKey(SWARM_STACK_LABEL)) {
-                                stackName = container.labels().get(SWARM_STACK_LABEL);
+                            if (container.labels().containsKey(DockerConstant.SWARM_STACK_LABEL)) {
+                                stackName = container.labels().get(DockerConstant.SWARM_STACK_LABEL);
                                 if (!swarmStacks.contains(stackName)) {
                                     swarmStacks.add(stackName);
                                 }
-                            } else if (container.labels().containsKey(COMPOSE_STACK_LABEL)) {
-                                stackName = container.labels().get(COMPOSE_STACK_LABEL);
+                            } else if (container.labels().containsKey(DockerConstant.COMPOSE_STACK_LABEL)) {
+                                stackName = container.labels().get(DockerConstant.COMPOSE_STACK_LABEL);
                                 if (!composeStacks.contains(stackName)) {
                                     composeStacks.add(stackName);
                                 }
@@ -62,13 +61,13 @@ public class SyncStackTask {
                         dockerClient.listServices().forEach(service -> {
                             if (service.spec().labels() != null && !service.spec().labels().isEmpty()) {
                                 String stackName;
-                                if (service.spec().labels().containsKey(SWARM_STACK_LABEL)) {
-                                    stackName = service.spec().labels().get(SWARM_STACK_LABEL);
+                                if (service.spec().labels().containsKey(DockerConstant.SWARM_STACK_LABEL)) {
+                                    stackName = service.spec().labels().get(DockerConstant.SWARM_STACK_LABEL);
                                     if (!swarmStacks.contains(stackName)) {
                                         swarmStacks.add(stackName);
                                     }
-                                } else if (service.spec().labels().containsKey(COMPOSE_STACK_LABEL)) {
-                                    stackName = service.spec().labels().get(COMPOSE_STACK_LABEL);
+                                } else if (service.spec().labels().containsKey(DockerConstant.COMPOSE_STACK_LABEL)) {
+                                    stackName = service.spec().labels().get(DockerConstant.COMPOSE_STACK_LABEL);
                                     if (!composeStacks.contains(stackName)) {
                                         composeStacks.add(stackName);
                                     }

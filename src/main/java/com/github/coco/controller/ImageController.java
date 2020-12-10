@@ -2,6 +2,7 @@ package com.github.coco.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.constant.DockerConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.socket.SocketEventHandle;
@@ -36,10 +37,10 @@ public class ImageController extends BaseController {
     @WebLog
     @PostMapping(value = "/pull")
     public void pullImage(@RequestBody Map<String, Object> params) {
-        String registry  = Objects.toString(params.get("registry"), "");
+        String registry  = Objects.toString(params.get("registry"), DockerConstant.IMAGE_DEFAULT_REGISTRY);
         String imageName = Objects.toString(params.get("imageName"), "");
-        if (!imageName.contains(GlobalConstant.IMAGE_TAG_DELIMITER)) {
-            imageName = String.format("%s:%s", imageName, GlobalConstant.IMAGE_DEFAULT_VERSION);
+        if (!imageName.contains(GlobalConstant.SPACEMARK_COLON)) {
+            imageName = String.format("%s:%s", imageName, DockerConstant.IMAGE_DEFAULT_VERSION);
         }
         // TODO 对接Docker Registry
         final String imageFullName = imageName;
