@@ -36,7 +36,7 @@ public class StackController extends BaseController {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
         int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
         try {
-            List<Stack> stacks = stackService.getStacks(dockerClient.getHost());
+            List<Stack> stacks = stackService.getStacks(getDockerClient().getHost());
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, stacks));
         } catch (Exception e) {

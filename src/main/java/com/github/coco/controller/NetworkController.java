@@ -31,7 +31,7 @@ public class NetworkController extends BaseController {
     public Map<String, Object> removeNetwork(@RequestBody Map<String, Object> params) {
         String networkId = params.getOrDefault("networkId", null).toString();
         try {
-            dockerClient.removeNetwork(networkId);
+            getDockerClient().removeNetwork(networkId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器网络成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "删除容器网络失败");
@@ -50,8 +50,8 @@ public class NetworkController extends BaseController {
             filters = DockerFilterHelper.getNetworkFilter(filter);
         }
         try {
-            List<Network> networks = dockerClient.listNetworks(DockerFilterHelper.toArray(filters,
-                                                                                          DockerClient.ListNetworksParam.class))
+            List<Network> networks = getDockerClient().listNetworks(DockerFilterHelper.toArray(filters,
+                                                                                               DockerClient.ListNetworksParam.class))
                                                   .stream()
                                                   .sorted((x, y) -> y.created().compareTo(x.created()))
                                                   .collect(Collectors.toList());
@@ -69,7 +69,7 @@ public class NetworkController extends BaseController {
         String networkId = params.getOrDefault("networkId", null).toString();
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.inspectNetwork(networkId));
+                                               getDockerClient().inspectNetwork(networkId));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取容器网络信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -82,7 +82,7 @@ public class NetworkController extends BaseController {
         String containerId = params.getOrDefault("containerId", null).toString();
         String networkId = params.getOrDefault("networkId", null).toString();
         try {
-            dockerClient.connectToNetwork(containerId, networkId);
+            getDockerClient().connectToNetwork(containerId, networkId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "加入网络成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "加入网络失败");
@@ -97,7 +97,7 @@ public class NetworkController extends BaseController {
         String networkId = params.getOrDefault("networkId", null).toString();
         boolean force = Objects.nonNull(params.get("force")) && Boolean.parseBoolean(params.get("force").toString());
         try {
-            dockerClient.disconnectFromNetwork(containerId, networkId, force);
+            getDockerClient().disconnectFromNetwork(containerId, networkId, force);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "离开网络成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "离开网络失败");

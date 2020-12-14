@@ -25,12 +25,12 @@ public class SwarmController extends BaseController {
     public Map<String, Object> initSwarm(@RequestBody Map<String, Object> params) {
         String ip = Objects.toString(params.get("ip"), "192.168.3.140");
         try {
-            if (dockerClient.info().swarm() == null) {
+            if (getDockerClient().info().swarm() == null) {
                 SwarmInit swarmInit = SwarmInit.builder()
                                                .advertiseAddr(ip)
                                                .listenAddr(ip)
                                                .build();
-                dockerClient.initSwarm(swarmInit);
+                getDockerClient().initSwarm(swarmInit);
             } else {
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "初始化Swarm集群节点成功");
             }
@@ -45,7 +45,7 @@ public class SwarmController extends BaseController {
     @PostMapping(value = "/inspect")
     public Map<String, Object> getSwarm(@RequestBody Map<String, Object> params) {
         try {
-            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, dockerClient.inspectSwarm());
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, getDockerClient().inspectSwarm());
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取集群节点信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "获取集群节点信息失败");

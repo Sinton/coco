@@ -37,7 +37,7 @@ public class VolumeController extends BaseController {
                                   .driver(driver)
                                   .build();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.createVolume(volume));
+                                               getDockerClient().createVolume(volume));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "创建容器挂载卷失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -49,7 +49,7 @@ public class VolumeController extends BaseController {
     public Map<String, Object> removeVolume(@RequestBody Map<String, Object> params) {
         String volumeName = Objects.toString(params.get("volumeName"), null);
         try {
-            dockerClient.removeVolume(volumeName);
+            getDockerClient().removeVolume(volumeName);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器挂载卷成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "删除容器挂载卷失败");
@@ -68,11 +68,11 @@ public class VolumeController extends BaseController {
             filters = DockerFilterHelper.getVolumesFilter(filter);
         }
         try {
-            List<Volume> volumes = dockerClient.listVolumes(filters.toArray(new DockerClient.ListVolumesParam[]{}))
-                                               .volumes()
-                                               .stream()
-                                               .sorted((x, y) -> y.createdAt().compareTo(x.createdAt()))
-                                               .collect(Collectors.toList());
+            List<Volume> volumes = getDockerClient().listVolumes(filters.toArray(new DockerClient.ListVolumesParam[]{}))
+                                                    .volumes()
+                                                    .stream()
+                                                    .sorted((x, y) -> y.createdAt().compareTo(x.createdAt()))
+                                                    .collect(Collectors.toList());
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, volumes));
         } catch (Exception e) {
@@ -87,7 +87,7 @@ public class VolumeController extends BaseController {
         String volumeName = Objects.toString(params.get("volumeName"), null);
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.inspectVolume(volumeName));
+                                               getDockerClient().inspectVolume(volumeName));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取容器挂载卷失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);

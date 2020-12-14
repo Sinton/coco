@@ -22,7 +22,7 @@ public class DockerController extends BaseController {
     @PostMapping(value = "/version")
     public Map<String, Object> getDockerVersion(@RequestBody Map<String, Object> params) {
         try {
-            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, dockerClient.version());
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, getDockerClient().version());
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取Docker版本内容失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -33,7 +33,7 @@ public class DockerController extends BaseController {
     @PostMapping(value = "/info")
     public Map<String, Object> getDockerInfo(@RequestBody Map<String, Object> params) {
         try {
-            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, dockerClient.info());
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, getDockerClient().info());
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取Docker信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);

@@ -28,7 +28,7 @@ public class NodeController extends BaseController {
     public Map<String, Object> deleteNode(@RequestBody Map<String, Object> params) {
         String nodeId = params.getOrDefault("nodeId", null).toString();
         try {
-            dockerClient.deleteNode(nodeId);
+            getDockerClient().deleteNode(nodeId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除集群成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "删除集群节点");
@@ -42,7 +42,7 @@ public class NodeController extends BaseController {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
         int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
         try {
-            List<Node> nodes = dockerClient.listNodes();
+            List<Node> nodes = getDockerClient().listNodes();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, nodes));
         } catch (Exception e) {
@@ -57,11 +57,11 @@ public class NodeController extends BaseController {
         String nodeId = params.getOrDefault("nodeId", null).toString();
         try {
             Map<String, Object> inspect = new HashMap<>(2);
-            inspect.put("node", dockerClient.inspectNode(nodeId));
-            List<Task> tasks = dockerClient.listTasks()
-                                           .stream()
-                                           .filter(item -> nodeId.equals(item.nodeId()))
-                                           .collect(Collectors.toList());
+            inspect.put("node", getDockerClient().inspectNode(nodeId));
+            List<Task> tasks = getDockerClient().listTasks()
+                                                .stream()
+                                                .filter(item -> nodeId.equals(item.nodeId()))
+                                                .collect(Collectors.toList());
             inspect.put("task", tasks);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, inspect);
         } catch (Exception e) {

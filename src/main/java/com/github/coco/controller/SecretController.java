@@ -33,7 +33,7 @@ public class SecretController extends BaseController {
                                               .labels(null)
                                               .build();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.createSecret(secretSpec));
+                                               getDockerClient().createSecret(secretSpec));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "创建加密配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -45,7 +45,7 @@ public class SecretController extends BaseController {
     public Map<String, Object> removeSecret(@RequestBody Map<String, Object> params) {
         String secretId = params.getOrDefault("secretId", null).toString();
         try {
-            dockerClient.deleteSecret(secretId);
+            getDockerClient().deleteSecret(secretId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除加密配置项成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "删除加密配置项失败");
@@ -59,7 +59,7 @@ public class SecretController extends BaseController {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
         int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
         try {
-            List<Secret> secrets = dockerClient.listSecrets();
+            List<Secret> secrets = getDockerClient().listSecrets();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, secrets));
         } catch (Exception e) {
@@ -74,7 +74,7 @@ public class SecretController extends BaseController {
         String secretId = params.getOrDefault("secretId", null).toString();
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.inspectSecret(secretId));
+                                               getDockerClient().inspectSecret(secretId));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), "获取加密配置项信息失败");
             return  apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);

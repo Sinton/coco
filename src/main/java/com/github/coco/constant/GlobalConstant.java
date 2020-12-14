@@ -8,6 +8,7 @@ public class GlobalConstant {
      * 成功请求状态码
      */
     public static final int SUCCESS_CODE           = 2000;
+
     /**
      * 冒号
      */
@@ -40,4 +41,9 @@ public class GlobalConstant {
      * 下划线
      */
     public static final String SPACEMARK_UNDERLINE = "_";
+
+    /**
+     * 鉴权令牌
+     */
+    public static final String TOKEN               = "token";
 }

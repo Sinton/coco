@@ -47,7 +47,7 @@ public class ImageController extends BaseController {
         ThreadPoolExecutor threadPool = ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE);
         threadPool.execute(() -> {
             try {
-                dockerClient.pull(imageFullName, message -> {
+                getDockerClient().pull(imageFullName, message -> {
                     if (message.error() != null) {
                         if (Objects.requireNonNull(message.error()).contains("404") ||
                             Objects.requireNonNull(message.error()).contains("not found")) {
@@ -72,7 +72,7 @@ public class ImageController extends BaseController {
     @PostMapping(value = "/import")
     public Map<String, Object> importImage(MultipartHttpServletRequest request) {
         try {
-            dockerClient.load(null, message -> {
+            getDockerClient().load(null, message -> {
                 message.error();
             });
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "导入镜像文件成功");
@@ -88,7 +88,7 @@ public class ImageController extends BaseController {
         String[] imageIds = Objects.toString(params.get("imageIds"), "").split(",");
         String imageFile  = "";
         try {
-            dockerClient.save(imageIds);
+            getDockerClient().save(imageIds);
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "导出镜像文件[%s]失败", imageFile);
         }
@@ -101,7 +101,7 @@ public class ImageController extends BaseController {
         String imageId       = Objects.toString(params.get("imageId"), "");
         String imageFullName = Objects.toString(params.get("imageFullName"), "");
         try {
-            dockerClient.tag(imageId, imageFullName);
+            getDockerClient().tag(imageId, imageFullName);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "制作镜像标签成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "制作镜像新标签[%s]失败", imageFullName);
@@ -116,7 +116,7 @@ public class ImageController extends BaseController {
         boolean force   = Boolean.parseBoolean(Objects.toString(params.get("force"), "false"));
         boolean noPrune = Boolean.parseBoolean(Objects.toString(params.get("noPrune"), "false"));
         try {
-            dockerClient.removeImage(imageId, force, noPrune);
+            getDockerClient().removeImage(imageId, force, noPrune);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "移除镜像成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "删除镜像[%s]失败", imageId);
@@ -129,7 +129,7 @@ public class ImageController extends BaseController {
     public Map<String, Object> searchImages(@RequestBody Map<String, Object> params) {
         String imageName = Objects.toString(params.get("imageName"), "");
         try {
-            List<ImageSearchResult> searchResults = dockerClient.searchImages(imageName);
+            List<ImageSearchResult> searchResults = getDockerClient().searchImages(imageName);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, searchResults);
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "搜索镜像[%s]失败", imageName);
@@ -148,8 +148,8 @@ public class ImageController extends BaseController {
             filters = DockerFilterHelper.getImageFilter(filter);
         }
         try {
-            List<Image> images = dockerClient.listImages(DockerFilterHelper.toArray(filters,
-                                                                                    DockerClient.ListImagesParam.class));
+            List<Image> images = getDockerClient().listImages(DockerFilterHelper.toArray(filters,
+                                                                                         DockerClient.ListImagesParam.class));
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, images));
         } catch (Exception e) {
@@ -163,10 +163,10 @@ public class ImageController extends BaseController {
     public Map<String, Object> getImage(@RequestBody Map<String, Object> params) {
         String imageId = Objects.toString(params.get("imageId"), "");
         try {
-            List<Image> images = dockerClient.listImages()
-                                             .stream()
-                                             .filter(item -> item.id().equals(imageId))
-                                             .collect(Collectors.toList());
+            List<Image> images = getDockerClient().listImages()
+                                                  .stream()
+                                                  .filter(item -> item.id().equals(imageId))
+                                                  .collect(Collectors.toList());
             if (images.isEmpty()) {
                 return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "找不到该镜像");
             } else {
@@ -184,7 +184,7 @@ public class ImageController extends BaseController {
         String imageId = Objects.toString(params.get("imageId"), "");
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.inspectImage(imageId));
+                                               getDockerClient().inspectImage(imageId));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取镜像信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -197,7 +197,7 @@ public class ImageController extends BaseController {
         String imageId = Objects.toString(params.get("imageId"), "");
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.history(imageId));
+                                               getDockerClient().history(imageId));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取镜像层信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);

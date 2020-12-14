@@ -76,7 +76,7 @@ public class ContainerController extends BaseController {
             Map<String, List<PortBinding>> portBindings = new HashMap<>(4);
             for (String exposedPort : containerExposedPorts) {
                 portBindings.put(exposedPort,
-                                 Collections.singletonList(PortBinding.of(dockerClient.getHost(),
+                                 Collections.singletonList(PortBinding.of(getDockerClient().getHost(),
                                                                           ports.get(exposedPort))));
             }
             HostConfig hostConfig = HostConfig.builder()
@@ -121,8 +121,8 @@ public class ContainerController extends BaseController {
             if (!labels.isEmpty()) {
                 builder.labels(labels);
             }
-            String containerId = dockerClient.createContainer(builder.build(), name).id();
-            dockerClient.startContainer(containerId);
+            String containerId = getDockerClient().createContainer(builder.build(), name).id();
+            getDockerClient().startContainer(containerId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "部署容器成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "部署容器失败");
@@ -144,15 +144,15 @@ public class ContainerController extends BaseController {
         boolean withVolumes = Boolean.parseBoolean(params.getOrDefault("withVolumes", false).toString());
         if (containerId != null) {
             try {
-                boolean autoRemove = dockerClient.inspectContainer(containerId).hostConfig().autoRemove();
-                if (!Objects.equals(dockerClient.inspectContainer(containerId).state().status(),
+                boolean autoRemove = getDockerClient().inspectContainer(containerId).hostConfig().autoRemove();
+                if (!Objects.equals(getDockerClient().inspectContainer(containerId).state().status(),
                                     ContainerStatusEnum.EXITED.getStatus())) {
-                    dockerClient.killContainer(containerId);
+                    getDockerClient().killContainer(containerId);
                 }
                 if (!autoRemove) {
-                    dockerClient.removeContainer(containerId,
-                                                 DockerClient.RemoveContainerParam.forceKill(force),
-                                                 DockerClient.RemoveContainerParam.removeVolumes(withVolumes));
+                    getDockerClient().removeContainer(containerId,
+                                                      DockerClient.RemoveContainerParam.forceKill(force),
+                                                      DockerClient.RemoveContainerParam.removeVolumes(withVolumes));
                 }
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器成功");
             } catch (Exception e) {
@@ -177,7 +177,7 @@ public class ContainerController extends BaseController {
         String name        = Objects.toString(params.get("name"), null);
         if (containerId != null) {
             try {
-                dockerClient.renameContainer(containerId, name);
+                getDockerClient().renameContainer(containerId, name);
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "重命名容器成功");
             } catch (Exception e) {
                 LoggerHelper.fmtError(getClass(), e, "重命名容器失败");
@@ -204,24 +204,24 @@ public class ContainerController extends BaseController {
             int waitSeconds;
             switch (actionEnum) {
                 case START:
-                    dockerClient.startContainer(containerId);
+                    getDockerClient().startContainer(containerId);
                     break;
                 case RESTART:
                     waitSeconds = Integer.parseInt(params.getOrDefault("waitSeconds", 10).toString());
-                    dockerClient.restartContainer(containerId, waitSeconds);
+                    getDockerClient().restartContainer(containerId, waitSeconds);
                     break;
                 case STOP:
                     waitSeconds = Integer.parseInt(params.getOrDefault("waitSeconds", 10).toString());
-                    dockerClient.stopContainer(containerId, waitSeconds);
+                    getDockerClient().stopContainer(containerId, waitSeconds);
                     break;
                 case PAUSE:
-                    dockerClient.pauseContainer(containerId);
+                    getDockerClient().pauseContainer(containerId);
                     break;
                 case UPPAUSE:
-                    dockerClient.unpauseContainer(containerId);
+                    getDockerClient().unpauseContainer(containerId);
                     break;
                 case KILL:
-                    dockerClient.killContainer(containerId);
+                    getDockerClient().killContainer(containerId);
                     break;
                 default:
                     // TODO 未识别动作异常
@@ -253,8 +253,8 @@ public class ContainerController extends BaseController {
             filters = DockerFilterHelper.getContainerFilter(filter);
         }
         try {
-            List<Container> containers = dockerClient.listContainers(DockerFilterHelper.toArray(filters,
-                                                                                                DockerClient.ListContainersParam.class));
+            List<Container> containers = getDockerClient().listContainers(DockerFilterHelper.toArray(filters,
+                                                                                                     DockerClient.ListContainersParam.class));
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, containers));
         } catch (Exception e) {
@@ -275,7 +275,7 @@ public class ContainerController extends BaseController {
         String containerId = Objects.toString(params.get("containerId"), null);
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.inspectContainer(containerId));
+                                               getDockerClient().inspectContainer(containerId));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取容器信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -318,14 +318,14 @@ public class ContainerController extends BaseController {
         }
         if (containerId != null) {
             try {
-                String logs = dockerClient.logs(containerId,
-                                                DockerClient.LogsParam.stderr(stdErr),
-                                                DockerClient.LogsParam.stdout(stdOut),
-                                                DockerClient.LogsParam.follow(follow),
-                                                DockerClient.LogsParam.tail(tail),
-                                                DockerClient.LogsParam.since(since),
-                                                DockerClient.LogsParam.timestamps(timestamps))
-                                          .readFully();
+                String logs = getDockerClient().logs(containerId,
+                                                     DockerClient.LogsParam.stderr(stdErr),
+                                                     DockerClient.LogsParam.stdout(stdOut),
+                                                     DockerClient.LogsParam.follow(follow),
+                                                     DockerClient.LogsParam.tail(tail),
+                                                     DockerClient.LogsParam.since(since),
+                                                     DockerClient.LogsParam.timestamps(timestamps))
+                                               .readFully();
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, logs);
             } catch (Exception e) {
                 LoggerHelper.fmtError(getClass(), e, "获取容器日志失败");
@@ -348,7 +348,7 @@ public class ContainerController extends BaseController {
         String containerId = Objects.toString(params.get("containerId"), null);
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.stats(containerId));
+                                               getDockerClient().stats(containerId));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取容器资源器监控统计失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -368,7 +368,7 @@ public class ContainerController extends BaseController {
         String psArgs      = Objects.toString(params.get("psArgs"), null);
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.topContainer(containerId, psArgs));
+                                               getDockerClient().topContainer(containerId, psArgs));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取容器进行信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);

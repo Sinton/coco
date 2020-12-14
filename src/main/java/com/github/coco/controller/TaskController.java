@@ -31,11 +31,11 @@ public class TaskController extends BaseController {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
         int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
         try {
-            List<Task> tasks = dockerClient.listTasks()
-                                           .stream()
-                                           .sorted((x, y) -> y.createdAt().compareTo(x.createdAt()))
-                                           .sorted((x, y) -> y.updatedAt().compareTo(x.updatedAt()))
-                                           .collect(Collectors.toList());
+            List<Task> tasks = getDockerClient().listTasks()
+                                                .stream()
+                                                .sorted((x, y) -> y.createdAt().compareTo(x.createdAt()))
+                                                .sorted((x, y) -> y.updatedAt().compareTo(x.updatedAt()))
+                                                .collect(Collectors.toList());
             if (groupBy) {
                 tasks = tasks.stream()
                              .filter(item -> item.serviceId().equals(serviceId))
@@ -59,13 +59,13 @@ public class TaskController extends BaseController {
         int tail = Integer.parseInt(params.getOrDefault("tail", -1).toString());
         if (taskId != null) {
             try {
-                String logs = dockerClient.taskLogs(taskId,
-                                                    DockerClient.LogsParam.stderr(stdErr),
-                                                    DockerClient.LogsParam.stdout(stdOut),
-                                                    DockerClient.LogsParam.tail(tail),
-                                                    DockerClient.LogsParam.timestamps(timestamps),
-                                                    DockerClient.LogsParam.follow(true))
-                                          .readFully();
+                String logs = getDockerClient().taskLogs(taskId,
+                                                         DockerClient.LogsParam.stderr(stdErr),
+                                                         DockerClient.LogsParam.stdout(stdOut),
+                                                         DockerClient.LogsParam.tail(tail),
+                                                         DockerClient.LogsParam.timestamps(timestamps),
+                                                         DockerClient.LogsParam.follow(true))
+                                               .readFully();
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, logs);
             } catch (Exception e) {
                 LoggerHelper.fmtError(getClass(), e, "获取调度任务日志");

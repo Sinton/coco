@@ -40,7 +40,7 @@ public class ConfigController extends BaseController {
                                               .labels(labels.isEmpty() ? null : labels)
                                               .build();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.createConfig(configSpec));
+                                               getDockerClient().createConfig(configSpec));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "创建容器配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -53,14 +53,14 @@ public class ConfigController extends BaseController {
         String configId = Objects.toString(params.get("configId"), "");
         String name     = Objects.toString(params.get("name"), "");
         try {
-            ConfigSpec configSpec = dockerClient.inspectConfig(configId).configSpec();
+            ConfigSpec configSpec = getDockerClient().inspectConfig(configId).configSpec();
             ConfigSpec cloneConfigSpec = ConfigSpec.builder()
                                                    .name(name)
                                                    .data(configSpec.data())
                                                    .labels(configSpec.labels())
                                                    .build();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.createConfig(cloneConfigSpec));
+                                               getDockerClient().createConfig(cloneConfigSpec));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "克隆容器配置项失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
@@ -72,7 +72,7 @@ public class ConfigController extends BaseController {
     public Map<String, Object> removeConfig(@RequestBody Map<String, Object> params) {
         String configId = Objects.toString(params.get("configId"), "");
         try {
-            dockerClient.deleteConfig(configId);
+            getDockerClient().deleteConfig(configId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除配置项成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "删除容器配置项失败");
@@ -88,12 +88,12 @@ public class ConfigController extends BaseController {
         Map<String, String> labels = JSON.parseObject(Objects.toString(params.get("data"), ""),
                                                       new TypeReference<Map<String, String>>() {});
         try {
-            Config config = dockerClient.inspectConfig(configId);
+            Config config = getDockerClient().inspectConfig(configId);
             ConfigSpec configSpec = ConfigSpec.builder()
                                               .name(config.configSpec().name())
                                               .labels(labels)
                                               .build();
-            dockerClient.updateConfig(config.id(), config.version().index(), configSpec);
+            getDockerClient().updateConfig(config.id(), config.version().index(), configSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "修改配置项成功");
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "修改容器配置项失败");
@@ -107,7 +107,7 @@ public class ConfigController extends BaseController {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
         int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
         try {
-            List<Config> configs = dockerClient.listConfigs();
+            List<Config> configs = getDockerClient().listConfigs();
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, configs));
         } catch (Exception e) {
@@ -122,7 +122,7 @@ public class ConfigController extends BaseController {
         String configId = Objects.toString(params.get("configId"), "");
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               dockerClient.inspectConfig(configId));
+                                               getDockerClient().inspectConfig(configId));
         } catch (Exception e) {
             LoggerHelper.fmtError(getClass(), e, "获取容器配置项摘要信息失败");
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
