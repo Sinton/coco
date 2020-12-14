@@ -1,5 +1,6 @@
 package com.github.coco.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,10 +15,18 @@ import javax.servlet.MultipartConfigElement;
  */
 @Configuration
 public class UploadConfig {
+    @Value("${spring.servlet.multipart.max-file-size}")
+    private String maxFileSize;
+
+    @Value("${spring.servlet.multipart.max-request-size}")
+    private String maxRequestSize;
+
+    private static final long MAX_UPLOAD_SIZE = DataSize.parse("50MB").toMegabytes();
+
     @Bean
     public MultipartResolver multipartResolver() {
         CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
-        multipartResolver.setMaxUploadSize(1024 * 1024 * 5);
+        multipartResolver.setMaxUploadSize(MAX_UPLOAD_SIZE);
         multipartResolver.setDefaultEncoding("UTF-8");
         return multipartResolver;
     }
@@ -25,8 +34,8 @@ public class UploadConfig {
     @Bean
     public MultipartConfigElement multipartConfigElement() {
         MultipartConfigFactory config = new MultipartConfigFactory();
-        config.setMaxFileSize(DataSize.parse("50MB"));
-        config.setMaxRequestSize(DataSize.parse("50MB"));
+        config.setMaxFileSize(DataSize.parse(maxFileSize));
+        config.setMaxRequestSize(DataSize.parse(maxRequestSize));
         return config.createMultipartConfig();
     }
 }
