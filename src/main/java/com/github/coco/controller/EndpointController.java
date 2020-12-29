@@ -5,13 +5,11 @@ import com.github.coco.constant.ErrorConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.EndpointTypeEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
-import com.github.coco.core.RuntimeContext;
 import com.github.coco.entity.Endpoint;
 import com.github.coco.schedule.SyncEndpointTask;
 import com.github.coco.service.EndpointService;
 import com.github.coco.utils.DockerConnectorHelper;
 import com.github.coco.utils.LoggerHelper;
-import com.github.coco.utils.RuntimeContextHelper;
 import com.spotify.docker.client.DockerHost;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -87,7 +85,9 @@ public class EndpointController extends BaseController {
         int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
         int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
         return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                           apiResponseDTO.tableResult(1, 10, endpointService.getEndpoints(pageNo, pageSize)));
+                                           apiResponseDTO.tableResult(pageNo,
+                                                                      pageSize,
+                                                                      endpointService.getEndpoints(pageNo, pageSize)));
     }
 
     @WebLog
@@ -97,8 +97,7 @@ public class EndpointController extends BaseController {
         if (StringUtils.isNotBlank(id)) {
             Endpoint endpoint = endpointService.getEndpoint(Endpoint.builder().id(Integer.parseInt(id)).build());
             if (endpoint != null) {
-                String token = RuntimeContextHelper.getToken().toString();
-                setDockerClient(token, DockerConnectorHelper.borrowDockerClient(endpoint));
+                setDockerClient(DockerConnectorHelper.borrowDockerClient(endpoint));
             } else {
                 LoggerHelper.fmtInfo(getClass(),"找不到该服务终端，无法切换服务终端");
             }
