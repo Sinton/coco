@@ -3,6 +3,7 @@ package com.github.coco.factory;
 import com.github.coco.constant.dict.EndpointTypeEnum;
 import com.github.coco.constant.dict.WhetherEnum;
 import com.github.coco.entity.Endpoint;
+import com.github.coco.utils.DateHelper;
 import com.github.coco.utils.EnumHelper;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
@@ -59,7 +60,9 @@ public class DockerConnectorFactory extends BasePooledObjectFactory<DockerClient
         } catch (DockerCertificateException e) {
             return null;
         }
-        return builder.connectTimeoutMillis(10 * 1000).readTimeoutMillis(10 * 1000).build();
+        return builder.connectTimeoutMillis(DateHelper.SECOND * 10)
+                      .readTimeoutMillis(DateHelper.SECOND * 10)
+                      .build();
     }
 
     @Override
