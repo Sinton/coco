@@ -1,6 +1,6 @@
 package com.github.coco.interceptor;
 
-import com.alibaba.fastjson.JSON;
+import com.github.coco.constant.GlobalConstant;
 import com.github.coco.core.RuntimeContext;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -17,10 +17,9 @@ import javax.servlet.http.HttpServletResponse;
 public class ContextInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        System.out.println(JSON.toJSONString(RuntimeContext.getContext().get()));
-        String token = request.getHeader("Authorization");
+        String token = request.getHeader(GlobalConstant.ACCESS_TOKEN);
         if (StringUtils.isNotBlank(token)) {
-            RuntimeContext.getContext().set("token", token);
+            RuntimeContext.getContext().set(GlobalConstant.TOKEN, token);
         }
         return true;
     }

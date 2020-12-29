@@ -4,29 +4,27 @@ import com.github.coco.cache.GlobalCache;
 import com.github.coco.dto.ApiResponseDTO;
 import com.github.coco.utils.RuntimeContextHelper;
 import com.spotify.docker.client.DockerClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
 
 /**
  * @author Yan
  */
 @RestController
 public class BaseController {
-    @Autowired
+    @Resource
     protected GlobalCache globalCache;
 
     protected ApiResponseDTO apiResponseDTO = new ApiResponseDTO();
 
     protected DockerClient getDockerClient() {
         String token = RuntimeContextHelper.getToken().toString();
-        return getDockerClient(token);
-    }
-
-    protected DockerClient getDockerClient(String token) {
         return globalCache.getDockerClient(token);
     }
 
-    protected void setDockerClient(String token, DockerClient dockerClient) {
+    protected void setDockerClient(DockerClient dockerClient) {
+        String token = RuntimeContextHelper.getToken().toString();
         globalCache.putDockerClient(token, dockerClient);
     }
 }
