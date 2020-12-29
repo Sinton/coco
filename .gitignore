@@ -1,6 +1,6 @@
+cache
+target
 Coco.db
-/target/
-spring.log*
 !.mvn/wrapper/maven-wrapper.jar
 
 ### STS ###

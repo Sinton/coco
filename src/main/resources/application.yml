@@ -13,6 +13,8 @@ spring:
       max-request-size: 50MB
       enabled: true
       file-size-threshold: 50MB
+  cache:
+    type: ehcache
 
 server:
   compression:
@@ -23,15 +25,6 @@ server:
   servlet:
     context-path: /
     application-display-name: coco
-
-#============================================================================
-# Logging
-#============================================================================
-logging:
-  file:
-    path: ./
-  level:
-    root: INFO
 
 #============================================================================
 # Mybatis

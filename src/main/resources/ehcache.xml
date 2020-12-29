@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache>
+    <diskStore path="./cache"/>
+    <!--
+    eternal:             是否永不过期，默认为false
+    maxEntriesLocalHeap: 堆内存中最大缓存对象数，0（无限期）
+    maxElementsInMemory: 最多存储缓存个数上限
+    timeToIdleSeconds:   最大空闲时间 /秒，默认值为0（无限期）。当被访问后，如不再访问则处于空闲状态，eternal为false时使用
+    timeToLiveSeconds:   最大存活时间 /秒，默认值为0（无限期）
+    diskPersistent:      持久化到磁盘
+    overflowToDisk:      内存不足时，是否启用磁盘缓存，写入到磁盘
+    -->
+    <cache name="TokenCache"
+           timeToIdleSeconds="1800"
+           timeToLiveSeconds="0"
+           maxEntriesLocalHeap="0"
+           maxElementsInMemory="10000"
+           overflowToDisk="true"
+           diskPersistent="true"/>
+</ehcache>
