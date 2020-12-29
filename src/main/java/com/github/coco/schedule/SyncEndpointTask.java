@@ -82,7 +82,7 @@ public class SyncEndpointTask {
                 message.put("endpointUrl", endpoint.getEndpointUrl());
                 LoggerHelper.fmtError(getClass(), e, "更新Docker终端服务%s异常", JSON.toJSONString(message));
             } finally {
-                DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
+                DockerConnectorHelper.returnDockerClient(dockerClient);
             }
         });
     }

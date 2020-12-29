@@ -92,7 +92,7 @@ public class SyncStackTask {
             } catch (Exception e) {
                 LoggerHelper.fmtError(getClass(), e, "获取应用栈信息异常");
             } finally {
-                DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
+                DockerConnectorHelper.returnDockerClient(dockerClient);
             }
 
             // 更新调整当前服务终端的应用栈信息
