@@ -9,3 +9,7 @@ spring:
     schema:
       - classpath:sqls/0.0.1/schema.sql
     initialization-mode: always
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 15
+      idle-timeout: 60000
