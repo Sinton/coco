@@ -3,13 +3,14 @@ package com.github.coco.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.cache.GlobalCache;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.entity.User;
 import com.github.coco.service.UserService;
 import com.github.coco.utils.EncryptHelper;
-import com.github.coco.utils.JwtHelper;
 import com.github.coco.utils.LoggerHelper;
+import com.github.coco.utils.RuntimeContextHelper;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,8 +66,12 @@ public class UserController extends BaseController {
 
     @WebLog
     @GetMapping(value = "/profile")
-    public Map<String, Object> profile(@RequestHeader("Authorization") String token) throws IOException {
-        String username = JwtHelper.getUsername(token);
+    public Map<String, Object> profile() throws IOException {
+        String username = null;
+        User cacheUser = globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(RuntimeContextHelper.getToken(), User.class);
+        if (cacheUser != null) {
+            username = cacheUser.getUsername();
+        }
         User user = userService.getUserByName(username);
         Map<String, Object> result = new HashMap<>(16);
         result.putAll(JSON.parseObject(JSON.toJSONString(user), new TypeReference<HashMap<String, Object>>() {}));

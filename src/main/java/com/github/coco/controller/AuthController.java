@@ -3,11 +3,11 @@ package com.github.coco.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.cache.GlobalCache;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.entity.User;
 import com.github.coco.service.UserService;
 import com.github.coco.utils.EncryptHelper;
-import com.github.coco.utils.JwtHelper;
 import com.github.coco.utils.LoggerHelper;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author Yan
@@ -37,12 +38,12 @@ public class AuthController extends BaseController {
             User user = userService.getUserByName(username);
             if (user != null) {
                 if (user.getPassword().equals(EncryptHelper.md5(password + user.getSalt()))) {
-                    String jwt = JwtHelper.sign(username);
+                    String token = UUID.randomUUID().toString();
+                    globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).put(token, user);
                     result.putAll(JSON.parseObject(JSON.toJSONString(user), new TypeReference<Map<String, Object>>() {}));
                     result.put("deleted", "0");
                     result.put("roleId", "admin");
-                    result.put("token", jwt);
-                    result.put("jwt", jwt);
+                    result.put("token", token);
                     return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), result);
                 } else {
                     return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "用户密码错误");

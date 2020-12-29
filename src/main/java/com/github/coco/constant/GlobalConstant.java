@@ -46,4 +46,9 @@ public class GlobalConstant {
      * 鉴权令牌
      */
     public static final String TOKEN               = "token";
+
+    /**
+     * 接口访问令牌
+     */
+    public static final String ACCESS_TOKEN        = "Access-Token";
 }
