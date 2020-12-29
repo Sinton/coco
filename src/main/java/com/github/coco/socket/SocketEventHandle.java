@@ -6,13 +6,13 @@ import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
+import com.github.coco.cache.GlobalCache;
+import com.github.coco.constant.GlobalConstant;
 import com.github.coco.handle.ExecSession;
 import com.github.coco.terminal.TerminalConnect;
 import com.github.coco.terminal.WebTerminalUser;
 import com.github.coco.thread.OutPutThread;
-import com.github.coco.utils.DockerConnectorHelper;
-import com.github.coco.utils.LoggerHelper;
-import com.github.coco.utils.ThreadPoolHelper;
+import com.github.coco.utils.*;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
@@ -20,8 +20,10 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerHost;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.io.IOUtils;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,23 +43,30 @@ public class SocketEventHandle {
     public static final String SOCKET_EVENT_CONNECT_CONTAINER_TERMINAL = "connectContainerTerminal";
     private static DockerClient dockerClient = DockerConnectorHelper.borrowDockerClient("192.168.3.140", 2375);
 
+    @Resource
+    private GlobalCache globalCache;
+
     public static volatile Map<String, SocketIOClient> clientMap = new ConcurrentHashMap<>(16);
     private static Map<String, ExecSession> execSessionMap = new ConcurrentHashMap<>(16);
     private static Map<String, Object> terminalMap = new ConcurrentHashMap<>(16);
 
     @OnConnect
     public void onConnect(SocketIOClient client) {
-        clientMap.put(client.getSessionId().toString(), client);
-        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 建立连接", client.getSessionId()));
+        String token = client.getHandshakeData().getSingleUrlParam(GlobalConstant.ACCESS_TOKEN);
+        globalCache.putSocketClient(token, client);
+        clientMap.put(token, client);
+        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 建立连接", token));
         initConnection(client);
     }
 
     @OnDisconnect
     public void onDisConnect(SocketIOClient client) {
+        String token = client.getHandshakeData().getSingleUrlParam(GlobalConstant.ACCESS_TOKEN);
         client.disconnect();
-        clientMap.remove(client.getSessionId().toString(), client);
+        globalCache.removeSocketClient(token);
+        clientMap.remove(token);
         disconnectTerminal(client);
-        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 断开连接", client.getSessionId()));
+        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 断开连接", token));
     }
 
     @OnEvent(SOCKET_EVENT_CONTAINER_TERMINAL)
@@ -265,5 +274,19 @@ public class SocketEventHandle {
             // 移除终端连接
             terminalMap.remove(sessionId);
         }
+    }
+
+    /**
+     * 每5分钟定时清理token失效的Socket客户端连接
+     */
+    @Scheduled(fixedDelay = 5 * DateHelper.MINUTE)
+    private void clearInvalidSocketClient() {
+        List<String> invalidTokens = new ArrayList<>();
+        clientMap.forEach((token, client) -> {
+            if (globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(token) == null) {
+                invalidTokens.add(token);
+            }
+        });
+        invalidTokens.forEach(token -> clientMap.remove(token));
     }
 }
