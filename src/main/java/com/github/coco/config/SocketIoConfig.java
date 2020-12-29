@@ -3,15 +3,24 @@ package com.github.coco.config;
 import com.corundumstudio.socketio.SocketConfig;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.SpringAnnotationScanner;
+import com.github.coco.cache.GlobalCache;
+import com.github.coco.constant.GlobalConstant;
+import com.github.coco.entity.User;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import javax.annotation.Resource;
 
 /**
  * @author Yan
  */
 @Configuration
 public class SocketIoConfig {
+    @Resource
+    private GlobalCache globalCache;
+
     @Value("${socketio.host}")
     private String host;
 
@@ -52,8 +61,16 @@ public class SocketIoConfig {
         config.setPingTimeout(pingTimeout);
         config.setPingInterval(pingInterval);
         config.setAuthorizationListener(data -> {
-            // TODO 连接鉴权
-            return true;
+            if (data.getUrlParams().containsKey(GlobalConstant.ACCESS_TOKEN)) {
+                String token = data.getUrlParams().get(GlobalConstant.ACCESS_TOKEN).get(0);
+                if (StringUtils.isNotBlank(token)) {
+                     return globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(token, User.class) != null;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
         });
         return new SocketIOServer(config);
     }
