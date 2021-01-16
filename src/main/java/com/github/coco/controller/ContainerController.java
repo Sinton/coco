@@ -16,6 +16,7 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.PortBinding;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 /**
  * @author Yan
  */
+@Slf4j
 @RestController
 @RequestMapping(value = "/api/container")
 public class ContainerController extends BaseController {
@@ -43,6 +45,7 @@ public class ContainerController extends BaseController {
         private String workingDir;
         private String console;
         private String user;
+        private String restartPolicy;
         private Map<String, String> ports = new HashMap<>(16);
         private Map<String, String> envs = new HashMap<>(16);
         private Map<String, String> labels = new HashMap<>(16);
@@ -71,6 +74,7 @@ public class ContainerController extends BaseController {
         String workingDir               = deployContainer.getWorkingDir();
         String console                  = deployContainer.getConsole();
         String user                     = deployContainer.getUser();
+        String restartPolicy            = deployContainer.getRestartPolicy();
         try {
             Set<String> containerExposedPorts = ports.keySet();
             Map<String, List<PortBinding>> portBindings = new HashMap<>(4);
@@ -79,53 +83,68 @@ public class ContainerController extends BaseController {
                                  Collections.singletonList(PortBinding.of(getDockerClient().getHost(),
                                                                           ports.get(exposedPort))));
             }
-            HostConfig hostConfig = HostConfig.builder()
-                                              .privileged(privileged)
-                                              .portBindings(portBindings)
-                                              .publishAllPorts(publishAllPorts)
-                                              .autoRemove(autoRemove)
-                                              .build();
+            HostConfig.Builder hostConfigBuilder = HostConfig.builder()
+                                                             .privileged(privileged)
+                                                             .portBindings(portBindings)
+                                                             .publishAllPorts(publishAllPorts)
+                                                             .autoRemove(autoRemove);
+            if (StringUtils.isNotBlank(restartPolicy)) {
+                switch (restartPolicy) {
+                    case "always":
+                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.always());
+                        break;
+                    case "unlessStopped":
+                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.unlessStopped());
+                        break;
+                    case "onFailure":
+                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.onFailure(0));
+                        break;
+                    default:
+                        break;
+                }
+            }
+            HostConfig hostConfig = hostConfigBuilder.build();
 
-            ContainerConfig.Builder builder = ContainerConfig.builder()
-                                                             .attachStdin(false)
-                                                             .attachStdout(true)
-                                                             .attachStderr(true)
-                                                             .image(image)
-                                                             .hostConfig(hostConfig);
+            ContainerConfig.Builder containerConfigBuilder = ContainerConfig.builder()
+                                                                            .attachStdin(false)
+                                                                            .attachStdout(true)
+                                                                            .attachStderr(true)
+                                                                            .image(image)
+                                                                            .hostConfig(hostConfig);
             if (StringUtils.isNotBlank(command)) {
-                builder.cmd(command.split(","));
+                containerConfigBuilder.cmd(command.split(","));
             }
             if (StringUtils.isNotBlank(entrypoint)) {
-                builder.entrypoint(entrypoint.split(","));
+                containerConfigBuilder.entrypoint(entrypoint.split(","));
             }
             if (StringUtils.isNotBlank(workingDir)) {
-                builder.workingDir(workingDir);
+                containerConfigBuilder.workingDir(workingDir);
             }
             if (StringUtils.isNotBlank(console)) {
                 if (console.startsWith("t")) {
-                    builder.tty(true);
+                    containerConfigBuilder.tty(true);
                 }
             }
             if (StringUtils.isNotBlank(user)) {
-                builder.user(user);
+                containerConfigBuilder.user(user);
             }
             if (!containerExposedPorts.isEmpty()) {
-                builder.exposedPorts(containerExposedPorts);
+                containerConfigBuilder.exposedPorts(containerExposedPorts);
             }
             if (!envs.isEmpty()) {
-                builder.env(envs.entrySet()
-                                .stream()
-                                .map(env -> String.format("%s=%s", env.getKey(), env.getValue()))
-                                .collect(Collectors.toList()));
+                containerConfigBuilder.env(envs.entrySet()
+                                      .stream()
+                                      .map(env -> String.format("%s=%s", env.getKey(), env.getValue()))
+                                      .collect(Collectors.toList()));
             }
             if (!labels.isEmpty()) {
-                builder.labels(labels);
+                containerConfigBuilder.labels(labels);
             }
-            String containerId = getDockerClient().createContainer(builder.build(), name).id();
+            String containerId = getDockerClient().createContainer(containerConfigBuilder.build(), name).id();
             getDockerClient().startContainer(containerId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "部署容器成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "部署容器失败");
+            log.error("部署容器失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
