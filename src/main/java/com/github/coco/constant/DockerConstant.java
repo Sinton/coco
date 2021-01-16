@@ -24,4 +24,14 @@ public class DockerConstant {
      * Compose应用栈标签
      */
     public static final String COMPOSE_STACK_LABEL    = "com.docker.compose.project";
+
+    /**
+     * Swarm应用栈默认文件名
+     */
+    public static final String SWARM_STACK_FILENAME   = "docker-stack.yml";
+
+    /**
+     * Compose应用栈默认文件名
+     */
+    public static final String COMPOSE_STACK_FILENAME = "docker-compose.yml";
 }
