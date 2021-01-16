@@ -41,7 +41,6 @@ public class SocketEventHandle {
     public static final String SOCKET_EVENT_TERMINAL                   = "terminal";
     public static final String SOCKET_EVENT_CONTAINER_TERMINAL         = "containerTerminal";
     public static final String SOCKET_EVENT_CONNECT_CONTAINER_TERMINAL = "connectContainerTerminal";
-    private static DockerClient dockerClient = DockerConnectorHelper.borrowDockerClient("192.168.3.140", 2375);
 
     @Resource
     private GlobalCache globalCache;
@@ -86,6 +85,8 @@ public class SocketEventHandle {
                 out.write(cmd.getBytes(StandardCharsets.UTF_8));
                 out.flush();
             } else {
+                String token = client.getHandshakeData().getSingleUrlParam(GlobalConstant.ACCESS_TOKEN);
+                DockerClient dockerClient = globalCache.getDockerClient(token);
                 String execId = dockerClient.execCreate(containerId,
                                                         new String[]{"bash"},
                                                         DockerClient.ExecCreateParam.attachStderr(stdErr),
