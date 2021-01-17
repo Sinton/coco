@@ -121,8 +121,23 @@ public class ContainerController extends BaseController {
                 containerConfigBuilder.workingDir(workingDir);
             }
             if (StringUtils.isNotBlank(console)) {
-                if (console.startsWith("t")) {
-                    containerConfigBuilder.tty(true);
+                switch (console) {
+                    case "it":
+                        containerConfigBuilder.tty(true);
+                        containerConfigBuilder.openStdin(true);
+                        break;
+                    case "i":
+                        containerConfigBuilder.tty(false);
+                        containerConfigBuilder.openStdin(true);
+                        break;
+                    case "t":
+                        containerConfigBuilder.tty(true);
+                        containerConfigBuilder.openStdin(false);
+                        break;
+                    default:
+                        containerConfigBuilder.tty(false);
+                        containerConfigBuilder.openStdin(false);
+                        break;
                 }
             }
             if (StringUtils.isNotBlank(user)) {
