@@ -4,6 +4,7 @@ import com.github.coco.compose.ComposeCommandsBuilder;
 import com.github.coco.compose.ComposeConfig;
 import com.github.coco.compose.ComposeOptionsBuilder;
 import com.github.coco.constant.DockerConstant;
+import com.github.coco.constant.GlobalConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -18,8 +19,21 @@ import java.nio.charset.StandardCharsets;
  */
 @Slf4j
 public class DockerComposeHelper {
-    private static final String DEFAULT_COMPOSE_PATH = "/data";
-    private static final String DEFAULT_BIN_FILE     = "docker-compose";
+    /**
+     * docker-compose二进制执行程序
+     */
+    private static final String DEFAULT_COMPOSE_BIN_FILENAME    = "docker-compose";
+    /**
+     * docker-compose.yml文件存储目录
+     */
+    private static final String DEFAULT_COMPOSE_STORE_DIRECTORY = "compose";
+
+    /**
+     * compose工程文件存储路径
+     */
+    private static final String DEFAULT_COMPOSE_PATH            = String.format("%s/%s",
+                                                                                GlobalConstant.DEFAULT_STORE_PATH,
+                                                                                DEFAULT_COMPOSE_STORE_DIRECTORY);
 
     public enum OperateEnum {
         /**
@@ -159,12 +173,12 @@ public class DockerComposeHelper {
         }
         if (currProcessResponseStream == ProcessResponseStreamEnum.ERROR) {
             execute(String.format("%s %s %s",
-                                  DEFAULT_BIN_FILE,
+                                  DEFAULT_COMPOSE_BIN_FILENAME,
                                   optionsBuilder.build(),
                                   commandsBuilder.build()),
                                   currProcessResponseStream);
         } else {
-            execute(String.format("%s %s %s", DEFAULT_BIN_FILE, optionsBuilder.build(), commandsBuilder.build()));
+            execute(String.format("%s %s %s", DEFAULT_COMPOSE_BIN_FILENAME, optionsBuilder.build(), commandsBuilder.build()));
         }
     }
 

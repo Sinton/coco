@@ -37,10 +37,10 @@ public class ImageController extends BaseController {
     @WebLog
     @PostMapping(value = "/pull")
     public void pullImage(@RequestBody Map<String, Object> params) {
-        String registry  = Objects.toString(params.get("registry"), DockerConstant.IMAGE_DEFAULT_REGISTRY);
+        String registry  = Objects.toString(params.get("registry"), DockerConstant.DEFAULT_IMAGE_REGISTRY);
         String imageName = Objects.toString(params.get("imageName"), "");
         if (!imageName.contains(GlobalConstant.SPACEMARK_COLON)) {
-            imageName = String.format("%s:%s", imageName, DockerConstant.IMAGE_DEFAULT_VERSION);
+            imageName = String.format("%s:%s", imageName, DockerConstant.DEFAULT_IMAGE_VERSION);
         }
         // TODO 对接Docker Registry
         final String imageFullName = imageName;

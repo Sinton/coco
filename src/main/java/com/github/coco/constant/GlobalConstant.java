@@ -13,30 +13,37 @@ public class GlobalConstant {
      * 冒号
      */
     public static final String SPACEMARK_COLON     = ":";
+
     /**
      * 逗号
      */
     public static final String SPACEMARK_COMMA     = ",";
+
     /**
      * 横杠
      */
     public static final String SPACEMARK_DASH      = "-";
+
     /**
      * 点号
      */
     public static final String SPACEMARK_DOT       = ".";
+
     /**
      * 等号
      */
     public static final String SPACEMARK_EQUAL     = "=";
+
     /**
      * 井号
      */
     public static final String SPACEMARK_POUND     = "#";
+
     /**
      * 分号
      */
     public static final String SPACEMARK_SEMICOLON = ";";
+
     /**
      * 下划线
      */
@@ -51,4 +58,9 @@ public class GlobalConstant {
      * 接口访问令牌
      */
     public static final String ACCESS_TOKEN        = "Access-Token";
+
+    /**
+     * 数据默认存储路径
+     */
+    public static final String DEFAULT_STORE_PATH  = "/data";
 }

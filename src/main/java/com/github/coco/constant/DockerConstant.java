@@ -7,11 +7,11 @@ public class DockerConstant {
     /**
      * 默认镜像仓库中心
      */
-    public static final String IMAGE_DEFAULT_REGISTRY = "docker.io";
+    public static final String DEFAULT_IMAGE_REGISTRY = "docker.io";
     /**
      * 镜像默认版本名称
      */
-    public static final String IMAGE_DEFAULT_VERSION  = "latest";
+    public static final String DEFAULT_IMAGE_VERSION  = "latest";
     /**
      * 服务标签
      */
