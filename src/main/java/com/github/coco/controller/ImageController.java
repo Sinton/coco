@@ -2,6 +2,7 @@ package com.github.coco.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.DockerConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
@@ -10,16 +11,20 @@ import com.github.coco.utils.DockerFilterHelper;
 import com.github.coco.utils.LoggerHelper;
 import com.github.coco.utils.ThreadPoolHelper;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.exceptions.ImagePullFailedException;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageSearchResult;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +35,7 @@ import java.util.stream.Collectors;
 /**
  * @author Yan
  */
+@Slf4j
 @RestController
 @RequestMapping(value = "/api/image")
 public class ImageController extends BaseController {
@@ -44,10 +50,12 @@ public class ImageController extends BaseController {
         }
         // TODO 对接Docker Registry
         final String imageFullName = imageName;
+        DockerClient dockerClient = getDockerClient();
+
         ThreadPoolExecutor threadPool = ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE);
         threadPool.execute(() -> {
             try {
-                getDockerClient().pull(imageFullName, message -> {
+                dockerClient.pull(imageFullName, message -> {
                     if (message.error() != null) {
                         if (Objects.requireNonNull(message.error()).contains("404") ||
                             Objects.requireNonNull(message.error()).contains("not found")) {
@@ -57,12 +65,12 @@ public class ImageController extends BaseController {
                             throw new ImagePullFailedException(imageFullName, message.toString());
                         }
                     } else {
-                        LoggerHelper.fmtInfo(getClass(), "推送消息：%s", JSON.toJSONString(message));
+                        log.info(String.format("推送消息：%s", JSON.toJSONString(message)));
                         SocketEventHandle.clientMap.forEach((token, client) -> client.sendEvent("pull", message));
                     }
                 });
-            } catch (Exception e) {
-                LoggerHelper.fmtError(getClass(), e, "拉取镜像失败");
+            } catch (DockerException | InterruptedException e) {
+                log.error("拉取镜像失败", e);
             }
         });
         threadPool.shutdown();
@@ -76,8 +84,8 @@ public class ImageController extends BaseController {
                 message.error();
             });
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "导入镜像文件成功");
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "导入镜像文件失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("导入镜像文件失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -89,8 +97,8 @@ public class ImageController extends BaseController {
         String imageFile  = "";
         try {
             getDockerClient().save(imageIds);
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "导出镜像文件[%s]失败", imageFile);
+        } catch (DockerException | InterruptedException | IOException e) {
+            log.error(String.format("导出镜像文件[%s]失败", imageFile), e);
         }
         return null;
     }
@@ -103,8 +111,8 @@ public class ImageController extends BaseController {
         try {
             getDockerClient().tag(imageId, imageFullName);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "制作镜像标签成功");
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "制作镜像新标签[%s]失败", imageFullName);
+        } catch (DockerException | InterruptedException e) {
+            log.error(String.format("制作镜像新标签[%s]失败", imageFullName), e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -118,8 +126,8 @@ public class ImageController extends BaseController {
         try {
             getDockerClient().removeImage(imageId, force, noPrune);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "移除镜像成功");
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "删除镜像[%s]失败", imageId);
+        } catch (DockerException | InterruptedException e) {
+            log.error(String.format("删除镜像[%s]失败", imageId), e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -131,8 +139,8 @@ public class ImageController extends BaseController {
         try {
             List<ImageSearchResult> searchResults = getDockerClient().searchImages(imageName);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, searchResults);
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "搜索镜像[%s]失败", imageName);
+        } catch (DockerException | InterruptedException e) {
+            log.error(String.format("搜索镜像[%s]失败", imageName), e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -140,8 +148,8 @@ public class ImageController extends BaseController {
     @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageImages(@RequestBody Map<String, Object> params) {
-        int pageNo   = Integer.parseInt(Objects.toString(params.get("pageNo"), "1"));
-        int pageSize = Integer.parseInt(Objects.toString(params.get("pageSize"), "10"));
+        int pageNo   = Integer.parseInt(String.valueOf(params.getOrDefault("pageNo", DbConstant.PAGE_NO)));
+        int pageSize = Integer.parseInt(String.valueOf(params.getOrDefault("pageSize", DbConstant.PAGE_SIZE)));
         List<DockerClient.ListImagesParam> filters = new ArrayList<>();
         if (params.get(DockerFilterHelper.FILTER_KEY) != null) {
             String filter = JSON.toJSONString(params.get(DockerFilterHelper.FILTER_KEY));
@@ -150,10 +158,22 @@ public class ImageController extends BaseController {
         try {
             List<Image> images = getDockerClient().listImages(DockerFilterHelper.toArray(filters,
                                                                                          DockerClient.ListImagesParam.class));
+            String searchName = Objects.toString(params.get("searchName"), "");
+            if (StringUtils.isNotBlank(searchName)) {
+                images = images.stream().filter(image -> {
+                    if (image.repoTags() != null && !image.repoTags().isEmpty()) {
+                        return image.repoTags()
+                                    .stream()
+                                    .anyMatch(tag -> tag.split(GlobalConstant.SPACEMARK_COLON)[0].contains(searchName));
+                    } else {
+                        return false;
+                    }
+                }).collect(Collectors.toList());
+            }
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, images));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取镜像列表失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("获取镜像列表失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -172,8 +192,8 @@ public class ImageController extends BaseController {
             } else {
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, images.iterator().next());
             }
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取镜像信息失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("获取镜像信息失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -185,8 +205,8 @@ public class ImageController extends BaseController {
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                getDockerClient().inspectImage(imageId));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取镜像信息失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("获取镜像摘要信息失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -198,8 +218,8 @@ public class ImageController extends BaseController {
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                getDockerClient().history(imageId));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取镜像层信息失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("获取镜像层信息失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
