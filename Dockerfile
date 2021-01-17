@@ -1,4 +1,4 @@
-FROM centos:7.2.1511
+FROM oraclejdk:8-jre-centos
 
 # author
 MAINTAINER Sinton<https://github.com/Sinton>
