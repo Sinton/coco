@@ -1,7 +1,7 @@
 package com.github.coco.utils;
 
-import com.github.coco.compose.ComposeConfig;
 import com.github.coco.compose.ComposeCommandsBuilder;
+import com.github.coco.compose.ComposeConfig;
 import com.github.coco.compose.ComposeOptionsBuilder;
 import com.github.coco.constant.DockerConstant;
 import lombok.extern.slf4j.Slf4j;
@@ -18,25 +18,58 @@ import java.nio.charset.StandardCharsets;
  */
 @Slf4j
 public class DockerComposeHelper {
-    private static final String DEFAULT_BIN          = "docker-compose";
     private static final String DEFAULT_COMPOSE_PATH = "/data";
+    private static final String DEFAULT_BIN_FILE     = "docker-compose";
 
     public enum OperateEnum {
         /**
          * 启动
          */
-        UP(1, ""),
-        DOWN(2, ""),
-        RUN(3, ""),
-        EXEC(4, ""),
-        PS(5, ""),
-        CONFIG(6, "");
+        START(1),
+        /**
+         * 停止
+         */
+        STOP(2),
+        /**
+         * 重启
+         */
+        RESTART(3),
+        /**
+         * 部署
+         */
+        UP(4),
+        /**
+         * 卸载
+         */
+        DOWN(5),
+        /**
+         * 删除
+         */
+        RM(6),
+        /**
+         * 执行命令
+         */
+        RUN(7),
+        /**
+         * 进入容器终端
+         */
+        EXEC(8),
+        /**
+         * 查看
+         */
+        PS(9),
+        /**
+         * 校验
+         */
+        CONFIG(10),
+        /**
+         * 日志
+         */
+        LOGS(11);
         int code;
-        String name;
 
-        OperateEnum(int code, String name) {
+        OperateEnum(int code) {
             this.code = code;
-            this.name = name;
         }
     }
 
@@ -44,21 +77,19 @@ public class DockerComposeHelper {
         /**
          * 全部信息
          */
-        ALL(1, "全部"),
+        ALL(1),
         /**
          * 正常信息
          */
-        NORMAL(2, "正常"),
+        NORMAL(2),
         /**
          * 错误异常信息
          */
-        ERROR(3, "错误异常");
+        ERROR(3);
         int code;
-        String name;
 
-        ProcessResponseStreamEnum(int code, String name) {
+        ProcessResponseStreamEnum(int code) {
             this.code = code;
-            this.name = name;
         }
     }
 
@@ -71,7 +102,9 @@ public class DockerComposeHelper {
     public static void composeOperate(OperateEnum operate, ComposeConfig composeConfig) {
         String directory = String.format("%s/%s", DEFAULT_COMPOSE_PATH, composeConfig.getProjectId());
         String filePath = String.format("%s/%s", directory, DockerConstant.COMPOSE_STACK_FILENAME);
-        ComposeCommandsBuilder.Builder commandsBuilder = ComposeCommandsBuilder.builder();
+        ProcessResponseStreamEnum currProcessResponseStream = ProcessResponseStreamEnum.ALL;
+
+        // 构建docker-compose Options参数
         ComposeOptionsBuilder.Builder optionsBuilder = ComposeOptionsBuilder.builder();
         if (StringUtils.isNotBlank(composeConfig.getRemote())) {
             optionsBuilder.remote(composeConfig.getRemote());
@@ -79,30 +112,71 @@ public class DockerComposeHelper {
         if (StringUtils.isNotBlank(composeConfig.getProject())) {
             optionsBuilder.project(composeConfig.getProject());
         }
+        if (composeConfig.getDebug()) {
+            optionsBuilder.verbose();
+        }
         optionsBuilder.composeFile(filePath).build();
+
+        // 构建docker-compose Commands参数
+        ComposeCommandsBuilder.Builder commandsBuilder = ComposeCommandsBuilder.builder();
         switch (operate) {
+            case START:
+                commandsBuilder.start(composeConfig);
+                break;
+            case STOP:
+                commandsBuilder.stop(composeConfig);
+                break;
+            case RESTART:
+                commandsBuilder.restart(composeConfig);
+                break;
             case UP:
-                commandsBuilder.up();
+                commandsBuilder.up(composeConfig);
                 break;
             case DOWN:
-                commandsBuilder.down();
+                commandsBuilder.down(composeConfig);
+                break;
+            case RM:
+                commandsBuilder.rm(composeConfig);
                 break;
             case RUN:
-                commandsBuilder.run();
+                commandsBuilder.run(composeConfig);
                 break;
             case EXEC:
-                commandsBuilder.exec();
+                commandsBuilder.exec(composeConfig);
                 break;
             case PS:
-                commandsBuilder.ps();
+                commandsBuilder.ps(composeConfig);
                 break;
             case CONFIG:
-                commandsBuilder.config();
+                currProcessResponseStream = ProcessResponseStreamEnum.ERROR;
+                commandsBuilder.config(composeConfig);
+                break;
+            case LOGS:
+                commandsBuilder.logs(composeConfig);
                 break;
             default:
                 break;
         }
-        execute(String.format("%s %s %s", DEFAULT_BIN, optionsBuilder.build(), commandsBuilder.build()));
+        if (currProcessResponseStream == ProcessResponseStreamEnum.ERROR) {
+            execute(String.format("%s %s %s",
+                                  DEFAULT_BIN_FILE,
+                                  optionsBuilder.build(),
+                                  commandsBuilder.build()),
+                                  currProcessResponseStream);
+        } else {
+            execute(String.format("%s %s %s", DEFAULT_BIN_FILE, optionsBuilder.build(), commandsBuilder.build()));
+        }
+    }
+
+    /**
+     * 校验docker-compose.yml内容格式
+     *
+     * @param composeConfig
+     * @return
+     */
+    public static boolean validateComposeFile(ComposeConfig composeConfig) {
+        DockerComposeHelper.composeOperate(DockerComposeHelper.OperateEnum.CONFIG, composeConfig);
+        return true;
     }
 
     /**

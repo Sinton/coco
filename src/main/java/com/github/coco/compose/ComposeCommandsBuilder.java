@@ -1,5 +1,8 @@
 package com.github.coco.compose;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,63 +20,176 @@ public class ComposeCommandsBuilder {
             command = new LinkedList<>();
         }
 
-        public Builder start() {
-            command.add("start");
+        /**
+         * 创建并启动所有服务的容器
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder up(ComposeConfig composeConfig) {
+            if (composeConfig.getDaemon()) {
+                command.add("up -d");
+            } else {
+                command.add("up");
+            }
             return this;
         }
 
-        public Builder stop() {
-            command.add("stop");
+        /**
+         * 停止并并删除所有服务的容器、网络、数据卷
+         * @param composeConfig
+         * @return
+         */
+        public Builder down(ComposeConfig composeConfig) {
+            if (composeConfig.getPruneVolume()) {
+                command.add("down -v");
+            } else {
+                command.add("down");
+            }
             return this;
         }
 
-        public Builder restart() {
-            command.add("restart");
+        /**
+         * 启动服务容器
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder start(ComposeConfig composeConfig) {
+            if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
+                command.add(String.format("start %s", composeConfig.getServiceName()));
+            } else {
+                command.add("start");
+            }
             return this;
         }
 
-        public Builder up() {
-            command.add("up");
+        /**
+         * 停止服务容器
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder stop(ComposeConfig composeConfig) {
+            if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
+                command.add(String.format("stop %s", composeConfig.getServiceName()));
+            } else {
+                command.add("stop");
+            }
             return this;
         }
 
-        public Builder down() {
-            command.add("down");
+        /**
+         * 重启服务容器
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder restart(ComposeConfig composeConfig) {
+            if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
+                command.add(String.format("restart %s", composeConfig.getServiceName()));
+            } else {
+                command.add("restart");
+            }
             return this;
         }
 
-        public Builder rm() {
-            command.add("rm");
+        /**
+         * 删除服务（停止状态）容器
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder rm(ComposeConfig composeConfig) {
+            List<String> arguments = new ArrayList<>();
+            arguments.add("rm");
+            arguments.add("-s");
+            arguments.add("-f");
+            if (composeConfig.getPruneVolume()) {
+                arguments.add("-v");
+            }
+            if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
+                arguments.add(composeConfig.getServiceName());
+            }
+            command.add(String.join(" ", arguments));
             return this;
         }
 
-        public Builder run() {
-            command.add("run");
+        /**
+         * 在指定服务容器上执行一个命令
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder run(ComposeConfig composeConfig) {
+            command.add(String.format("run %s %s", composeConfig.getServiceName(), composeConfig.getCommand()));
             return this;
         }
 
-        public Builder exec() {
-            command.add("exec");
+        /**
+         * 进入服务容器
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder exec(ComposeConfig composeConfig) {
+            if (StringUtils.isNotBlank(composeConfig.getServiceIndex())) {
+                command.add(String.format("exec %s %s %s",
+                                          composeConfig.getServiceIndex(),
+                                          composeConfig.getServiceName(),
+                                          composeConfig.getCommand()));
+            } else {
+                command.add(String.format("exec %s %s", composeConfig.getServiceName(), composeConfig.getCommand()));
+            }
             return this;
         }
 
-        public Builder ps() {
-            command.add("ps");
+        /**
+         * 列出工程中所有服务的容器
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder ps(ComposeConfig composeConfig) {
+            if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
+                command.add(String.format("ps %s", composeConfig.getServiceName()));
+            } else {
+                command.add("ps");
+            }
             return this;
         }
 
-        public Builder config() {
-            command.add("config");
+        /**
+         * 验证docker-compose.yml文件
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder config(ComposeConfig composeConfig) {
+            if (StringUtils.isNotBlank(composeConfig.getModuleName())) {
+                command.add(String.format("config -q --%s", composeConfig.getModuleName()));
+            } else {
+                command.add("config -q");
+            }
             return this;
         }
 
-        public Builder config(String config) {
-            command.add(String.format("config %s", config));
-            return this;
-        }
-
-        public Builder logs(String serviceName) {
-            command.add(String.format("logs %s", serviceName));
+        /**
+         * 查看服务容器的输出日志
+         *
+         * @param composeConfig
+         * @return
+         */
+        public Builder logs(ComposeConfig composeConfig) {
+            List<String> arguments = new LinkedList<>();
+            arguments.add("logs");
+            if (composeConfig.getFollowLogs()) {
+                arguments.add("-f");
+            }
+            if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
+                arguments.add(composeConfig.getServiceName());
+            }
+            command.add(String.join(" ", arguments));
             return this;
         }
 

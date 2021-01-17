@@ -72,6 +72,16 @@ public class ComposeOptionsBuilder {
             return this;
         }
 
+        /**
+         * 输出更多调试信息
+         *
+         * @return
+         */
+        public Builder verbose() {
+            command.add("--verbose");
+            return this;
+        }
+
         public String build() {
             return String.join(" ", command);
         }
