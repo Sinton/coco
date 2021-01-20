@@ -1,6 +1,8 @@
 package com.github.coco.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.ErrorConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.EndpointTypeEnum;
@@ -10,6 +12,7 @@ import com.github.coco.schedule.SyncEndpointTask;
 import com.github.coco.service.EndpointService;
 import com.github.coco.utils.DockerConnectorHelper;
 import com.github.coco.utils.LoggerHelper;
+import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerHost;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -71,9 +74,30 @@ public class EndpointController extends BaseController {
         Integer id = (Integer) params.get("id");
         try {
             endpointService.removeEndpoint(id);
-            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除服务重点成功");
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除服务终端成功");
         } catch (Exception e) {
-            return apiResponseDTO.returnResult(ErrorConstant.ERR_BASE_COMMON, "删除服务重点失败");
+            return apiResponseDTO.returnResult(ErrorConstant.ERR_BASE_COMMON, "删除服务终端失败");
+        }
+    }
+
+    @WebLog
+    @PostMapping("/modify")
+    public Map<String, Object> modifyEndpoint(@RequestBody Map<String, Object> params) {
+        try {
+            Endpoint endpoint = JSON.parseObject(JSON.toJSONString(params), Endpoint.class);
+            boolean notChangedEndpointUrl = endpointService.getEndpoint(Endpoint.builder().id(endpoint.getId()).build())
+                                                           .getEndpointUrl()
+                                                           .equals(endpoint.getEndpointUrl());
+            if (!notChangedEndpointUrl) {
+                // 切换释放对象连接池中服务终端对应的DockerClient
+                DockerClient dockerClient = getDockerClient();
+                setDockerClient(DockerConnectorHelper.borrowDockerClient(endpoint));
+                DockerConnectorHelper.returnDockerClient(dockerClient);
+            }
+            endpointService.modifyEndpoint(endpoint);
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "修改服务终端成功");
+        } catch (Exception e) {
+            return apiResponseDTO.returnResult(ErrorConstant.ERR_BASE_COMMON, "修改服务终端失败");
         }
     }
 
@@ -82,8 +106,8 @@ public class EndpointController extends BaseController {
     public Map<String, Object> getPageEndpoints(@RequestBody Map<String, Object> params) {
         syncEndpointTask.syncEndpoints();
 
-        int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
-        int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
+        int pageNo = Integer.parseInt(String.valueOf(params.getOrDefault("pageNo", DbConstant.PAGE_NO)));
+        int pageSize = Integer.parseInt(String.valueOf(params.getOrDefault("pageSize", DbConstant.PAGE_SIZE)));
         return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                            apiResponseDTO.tableResult(pageNo,
                                                                       pageSize,
