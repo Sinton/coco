@@ -9,11 +9,11 @@ ADD ./Coco.jar ./Coco.jar
 ADD ./docker-entrypoint.sh ./docker-entrypoint.sh
 
 ENV COCO_VERSION=1.0.0 \
-    COCO_DATA_DIR=/data \
-    COCO_LOG_DIR=/logs
+    COCO_STORAGE_DIR=/data
 
 RUN set -ex && \
-    # install base tool
+    chmod a+x ./docker-entrypoint.sh
+    # install some necessary tools
     yum install -y unzip && \
     yum clean all && \
     # download docker-compose
