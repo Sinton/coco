@@ -27,4 +27,14 @@ public class BaseController {
         String token = RuntimeContextHelper.getToken().toString();
         globalCache.putDockerClient(token, dockerClient);
     }
+
+    /**
+     * 清理Token
+     */
+    protected void evictToken() {
+        String token = RuntimeContextHelper.getToken().toString();
+        globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).evict(token);
+        globalCache.removeDockerClient(token);
+        globalCache.removeDockerClient(token);
+    }
 }

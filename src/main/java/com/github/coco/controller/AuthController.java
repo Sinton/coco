@@ -60,7 +60,8 @@ public class AuthController extends BaseController {
     @WebLog
     @PostMapping(value = "/logout")
     public Map<String, Object> logout() {
-        return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), "");
+        evictToken();
+        return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), "注销成功");
     }
 
     @WebLog
