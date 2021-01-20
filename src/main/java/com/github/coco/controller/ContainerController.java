@@ -2,19 +2,18 @@ package com.github.coco.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ContainerActionEnum;
 import com.github.coco.constant.dict.ContainerStatusEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.constant.dict.TimeFetchEnum;
 import com.github.coco.utils.DockerFilterHelper;
+import com.github.coco.utils.DockerNetworkHelper;
 import com.github.coco.utils.EnumHelper;
-import com.github.coco.utils.LoggerHelper;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.Container;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.PortBinding;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.*;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +48,9 @@ public class ContainerController extends BaseController {
         private Map<String, String> ports = new HashMap<>(16);
         private Map<String, String> envs = new HashMap<>(16);
         private Map<String, String> labels = new HashMap<>(16);
+        private Map<String, String> volumes = new HashMap<>(16);
+        private Map<String, String> networkingConfig = new HashMap<>(16);
+        private Map<String, String> resources = new HashMap<>(16);
     }
 
     /**
@@ -61,20 +63,23 @@ public class ContainerController extends BaseController {
     @PostMapping(value = "/create")
     public Map<String, Object> createContainer(@RequestBody Map<String, Object> params) {
         DeployContainer deployContainer = JSON.parseObject(JSON.toJSONString(params), DeployContainer.class);
-        String name                     = deployContainer.getName();
-        String image                    = deployContainer.getImage();
-        boolean autoRemove              = deployContainer.getAutoRemove();
-        boolean publishAllPorts         = deployContainer.getPublishAllPorts();
-        boolean privileged              = deployContainer.getPrivileged();
-        Map<String, String> ports       = deployContainer.getPorts();
-        Map<String, String> envs        = deployContainer.getEnvs();
-        Map<String, String> labels      = deployContainer.getLabels();
-        String command                  = deployContainer.getCommand();
-        String entrypoint               = deployContainer.getEntrypoint();
-        String workingDir               = deployContainer.getWorkingDir();
-        String console                  = deployContainer.getConsole();
-        String user                     = deployContainer.getUser();
-        String restartPolicy            = deployContainer.getRestartPolicy();
+        String name                          = deployContainer.getName();
+        String image                         = deployContainer.getImage();
+        boolean autoRemove                   = deployContainer.getAutoRemove();
+        boolean publishAllPorts              = deployContainer.getPublishAllPorts();
+        boolean privileged                   = deployContainer.getPrivileged();
+        String command                       = deployContainer.getCommand();
+        String entrypoint                    = deployContainer.getEntrypoint();
+        String workingDir                    = deployContainer.getWorkingDir();
+        String console                       = deployContainer.getConsole();
+        String user                          = deployContainer.getUser();
+        String restartPolicy                 = deployContainer.getRestartPolicy();
+        Map<String, String> ports            = deployContainer.getPorts();
+        Map<String, String> envs             = deployContainer.getEnvs();
+        Map<String, String> labels           = deployContainer.getLabels();
+        Map<String, String> volumes          = deployContainer.getVolumes();
+        Map<String, String> networkingConfig = deployContainer.getNetworkingConfig();
+        Map<String, String> resources        = deployContainer.getResources();
         try {
             Set<String> containerExposedPorts = ports.keySet();
             Map<String, List<PortBinding>> portBindings = new HashMap<>(4);
@@ -89,19 +94,32 @@ public class ContainerController extends BaseController {
                                                              .publishAllPorts(publishAllPorts)
                                                              .autoRemove(autoRemove);
             if (StringUtils.isNotBlank(restartPolicy)) {
-                switch (restartPolicy) {
-                    case "always":
-                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.always());
-                        break;
-                    case "unlessStopped":
-                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.unlessStopped());
-                        break;
-                    case "onFailure":
-                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.onFailure(0));
-                        break;
-                    default:
-                        break;
+                if (autoRemove) {
+                    return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "开启自动删除后，无法对容器设置重启策略");
+                } else {
+                    switch (restartPolicy) {
+                        case "always":
+                            hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.always());
+                            break;
+                        case "unlessStopped":
+                            hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.unlessStopped());
+                            break;
+                        case "onFailure":
+                            hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.onFailure(0));
+                            break;
+                        default:
+                            break;
+                    }
                 }
+            }
+            if (!volumes.isEmpty()) {
+                List<String> volumeBinds = volumes.entrySet()
+                                                  .stream()
+                                                  .map(volume -> String.format("%s:%s", volume.getKey(), volume.getValue()))
+                                                  .collect(Collectors.toList());
+                hostConfigBuilder.binds(volumeBinds);
+            }
+            if (!resources.isEmpty()) {
             }
             HostConfig hostConfig = hostConfigBuilder.build();
 
@@ -112,10 +130,10 @@ public class ContainerController extends BaseController {
                                                                             .image(image)
                                                                             .hostConfig(hostConfig);
             if (StringUtils.isNotBlank(command)) {
-                containerConfigBuilder.cmd(command.split(","));
+                containerConfigBuilder.cmd("sh", "-c", command);
             }
             if (StringUtils.isNotBlank(entrypoint)) {
-                containerConfigBuilder.entrypoint(entrypoint.split(","));
+                containerConfigBuilder.entrypoint(entrypoint.split(GlobalConstant.SPACEMARK_COMMA));
             }
             if (StringUtils.isNotBlank(workingDir)) {
                 containerConfigBuilder.workingDir(workingDir);
@@ -148,17 +166,24 @@ public class ContainerController extends BaseController {
             }
             if (!envs.isEmpty()) {
                 containerConfigBuilder.env(envs.entrySet()
-                                      .stream()
-                                      .map(env -> String.format("%s=%s", env.getKey(), env.getValue()))
-                                      .collect(Collectors.toList()));
+                                               .stream()
+                                               .map(env -> String.format("%s=%s", env.getKey(), env.getValue()))
+                                               .collect(Collectors.toList()));
             }
             if (!labels.isEmpty()) {
                 containerConfigBuilder.labels(labels);
             }
+            if (!volumes.isEmpty()) {
+                Set<String> volumeBinds = new HashSet<>(volumes.values());
+                containerConfigBuilder.volumes(volumeBinds);
+            }
+            if (!networkingConfig.isEmpty() && networkingConfig.containsKey(DockerNetworkHelper.NETWORK)) {
+                containerConfigBuilder.networkingConfig(DockerNetworkHelper.generateNetworkingConfig(networkingConfig));
+            }
             String containerId = getDockerClient().createContainer(containerConfigBuilder.build(), name).id();
             getDockerClient().startContainer(containerId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "部署容器成功");
-        } catch (Exception e) {
+        } catch (DockerException | InterruptedException e) {
             log.error("部署容器失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
@@ -189,8 +214,8 @@ public class ContainerController extends BaseController {
                                                       DockerClient.RemoveContainerParam.removeVolumes(withVolumes));
                 }
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器成功");
-            } catch (Exception e) {
-                LoggerHelper.fmtError(getClass(), e, "删除容器失败");
+            } catch (DockerException | InterruptedException e) {
+                log.error("删除容器失败", e);
                 return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
             }
         } else {
@@ -213,8 +238,8 @@ public class ContainerController extends BaseController {
             try {
                 getDockerClient().renameContainer(containerId, name);
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "重命名容器成功");
-            } catch (Exception e) {
-                LoggerHelper.fmtError(getClass(), e, "重命名容器失败");
+            } catch (DockerException | InterruptedException e) {
+                log.error("重命名容器失败", e);
                 return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
             }
         } else {
@@ -264,8 +289,8 @@ public class ContainerController extends BaseController {
             }
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                String.format("%s成功", action));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "修改容器状态失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("修改容器状态失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -279,8 +304,8 @@ public class ContainerController extends BaseController {
     @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageContainers(@RequestBody Map<String, Object> params) {
-        int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
-        int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
+        int pageNo = Integer.parseInt(String.valueOf(params.getOrDefault("pageNo", DbConstant.PAGE_NO)));
+        int pageSize = Integer.parseInt(String.valueOf(params.getOrDefault("pageSize", DbConstant.PAGE_SIZE)));
         List<DockerClient.ListContainersParam> filters = new ArrayList<>();
         if (params.get(DockerFilterHelper.FILTER_KEY) != null) {
             String filter = JSON.toJSONString(params.get(DockerFilterHelper.FILTER_KEY));
@@ -291,8 +316,8 @@ public class ContainerController extends BaseController {
                                                                                                      DockerClient.ListContainersParam.class));
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, containers));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取容器列表失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("获取容器列表失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -310,8 +335,8 @@ public class ContainerController extends BaseController {
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                getDockerClient().inspectContainer(containerId));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取容器信息失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("获取容器信息失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -361,8 +386,8 @@ public class ContainerController extends BaseController {
                                                      DockerClient.LogsParam.timestamps(timestamps))
                                                .readFully();
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, logs);
-            } catch (Exception e) {
-                LoggerHelper.fmtError(getClass(), e, "获取容器日志失败");
+            } catch (DockerException | InterruptedException e) {
+                log.error("获取容器日志失败", e);
                 return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
             }
         } else {
@@ -383,8 +408,8 @@ public class ContainerController extends BaseController {
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                getDockerClient().stats(containerId));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取容器资源器监控统计失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("获取容器资源器监控统计失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -403,8 +428,8 @@ public class ContainerController extends BaseController {
         try {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                getDockerClient().topContainer(containerId, psArgs));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取容器进行信息失败");
+        } catch (DockerException | InterruptedException e) {
+            log.error("获取容器进行信息失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
