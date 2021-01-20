@@ -42,7 +42,9 @@ public class SyncEndpointTask {
                         status = EndpointStatusEnum.UP.getCode();
                         // docker配置
                         Map<String, Object> dockerConfig = new HashMap<>(16);
-                        dockerConfig.put("services", dockerClient.listServices().size());
+                        if (dockerClient.info().swarm().controlAvailable()) {
+                            dockerConfig.put("services", dockerClient.listServices().size());
+                        }
                         dockerConfig.put("stacks", stackService.getStacks(endpoint.getPublicIp()).size());
                         Map<String, Object> imageConfig = new HashMap<>(4);
                         imageConfig.put("total", dockerClient.listImages().size());
