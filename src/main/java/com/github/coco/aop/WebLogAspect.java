@@ -1,7 +1,6 @@
 package com.github.coco.aop;
 
 import com.github.coco.annotation.WebLog;
-import com.github.coco.utils.LoggerHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -46,7 +45,7 @@ public class WebLogAspect {
         // 打印请求的 IP
         log.info(String.format("IP             : %s", request.getRemoteAddr()));
         // 打印请求入参
-        log.info(String.format("Request Args   : %s", joinPoint.getArgs()));
+        log.info(String.format("Request Args   : %s", (joinPoint.getArgs().length > 0) ? joinPoint.getArgs() : new Object[]{""}));
     }
 
     @After("webLogPointCut()")
