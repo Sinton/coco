@@ -82,7 +82,7 @@ public class ContainerController extends BaseController {
         Map<String, String> resources        = deployContainer.getResources();
         try {
             Set<String> containerExposedPorts = ports.keySet();
-            Map<String, List<PortBinding>> portBindings = new HashMap<>(4);
+            Map<String, List<PortBinding>> portBindings = new HashMap<>(2);
             for (String exposedPort : containerExposedPorts) {
                 portBindings.put(exposedPort,
                                  Collections.singletonList(PortBinding.of(getDockerClient().getHost(),
@@ -94,22 +94,23 @@ public class ContainerController extends BaseController {
                                                              .publishAllPorts(publishAllPorts)
                                                              .autoRemove(autoRemove);
             if (StringUtils.isNotBlank(restartPolicy)) {
-                if (autoRemove) {
+                boolean restartPolicyConflict = autoRemove;
+                switch (restartPolicy) {
+                    case "always":
+                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.always());
+                        break;
+                    case "unlessStopped":
+                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.unlessStopped());
+                        break;
+                    case "onFailure":
+                        hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.onFailure(0));
+                        break;
+                    default:
+                        restartPolicyConflict = false;
+                        break;
+                }
+                if (restartPolicyConflict) {
                     return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "开启自动删除后，无法对容器设置重启策略");
-                } else {
-                    switch (restartPolicy) {
-                        case "always":
-                            hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.always());
-                            break;
-                        case "unlessStopped":
-                            hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.unlessStopped());
-                            break;
-                        case "onFailure":
-                            hostConfigBuilder.restartPolicy(HostConfig.RestartPolicy.onFailure(0));
-                            break;
-                        default:
-                            break;
-                    }
                 }
             }
             if (!volumes.isEmpty()) {
@@ -120,6 +121,10 @@ public class ContainerController extends BaseController {
                 hostConfigBuilder.binds(volumeBinds);
             }
             if (!resources.isEmpty()) {
+                double cpuLimits = (getDockerClient().info().cpus() * Math.pow(10, 9) * Double.parseDouble(resources.get("cpuLimits")) / 100);
+                hostConfigBuilder.nanoCpus(new Double(cpuLimits).longValue());
+                hostConfigBuilder.memoryReservation(Long.parseLong(resources.get("memoryReservations")) * 1024 * 1024);
+                hostConfigBuilder.memory(Long.parseLong(resources.get("memoryLimits")) * 1024 * 1024);
             }
             HostConfig hostConfig = hostConfigBuilder.build();
 
