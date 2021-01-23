@@ -11,9 +11,9 @@ import com.github.coco.entity.Endpoint;
 import com.github.coco.schedule.SyncEndpointTask;
 import com.github.coco.service.EndpointService;
 import com.github.coco.utils.DockerConnectorHelper;
-import com.github.coco.utils.LoggerHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerHost;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +27,7 @@ import java.util.Objects;
 /**
  * @author Yan
  */
+@Slf4j
 @RestController
 @RequestMapping(value = "/api/endpoint")
 public class EndpointController extends BaseController {
@@ -60,7 +61,7 @@ public class EndpointController extends BaseController {
                 endpointService.createEndpoint(endpoint);
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, endpointService.getEndpoint(endpoint));
             } catch (Exception e) {
-                LoggerHelper.fmtError(getClass(), e, "创建终端服务发生异常");
+                log.error("创建终端服务发生异常", e);
                 return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "创建终端服务发生异常");
             }
         } else {
@@ -76,6 +77,7 @@ public class EndpointController extends BaseController {
             endpointService.removeEndpoint(id);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除服务终端成功");
         } catch (Exception e) {
+            log.error("删除服务终端失败", e);
             return apiResponseDTO.returnResult(ErrorConstant.ERR_BASE_COMMON, "删除服务终端失败");
         }
     }
@@ -92,11 +94,12 @@ public class EndpointController extends BaseController {
                 // 切换释放对象连接池中服务终端对应的DockerClient
                 DockerClient dockerClient = getDockerClient();
                 setDockerClient(DockerConnectorHelper.borrowDockerClient(endpoint));
-                DockerConnectorHelper.returnDockerClient(dockerClient);
+                DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
             }
             endpointService.modifyEndpoint(endpoint);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "修改服务终端成功");
         } catch (Exception e) {
+            log.error("修改服务终端失败", e);
             return apiResponseDTO.returnResult(ErrorConstant.ERR_BASE_COMMON, "修改服务终端失败");
         }
     }
@@ -123,7 +126,7 @@ public class EndpointController extends BaseController {
             if (endpoint != null) {
                 setDockerClient(DockerConnectorHelper.borrowDockerClient(endpoint));
             } else {
-                LoggerHelper.fmtInfo(getClass(),"找不到该服务终端，无法切换服务终端");
+                log.info("找不到该服务终端，无法切换服务终端");
             }
         }
         return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, null);
