@@ -1,12 +1,14 @@
 package com.github.coco.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.DockerFilterHelper;
-import com.github.coco.utils.LoggerHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.Volume;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 /**
  * @author Yan
  */
+@Slf4j
 @RestController
 @RequestMapping(value = "/api/volume")
 public class VolumeController extends BaseController {
@@ -29,17 +32,21 @@ public class VolumeController extends BaseController {
     @WebLog
     @PostMapping(value = "/create")
     public Map<String, Object> createVolume(@RequestBody Map<String, Object> params) {
-        String volumeName = Objects.toString(params.get("volumeName"), null);
+        String volumeName = Objects.toString(params.get("name"), null);
         String driver = Objects.toString(params.get("driver"), null);
+        Map<String, String> driverOpts = JSON.parseObject(JSON.toJSONString(params.getOrDefault("driverOpts", "")),
+                                                          new TypeReference<Map<String, String>>() {});
         try {
-            Volume volume = Volume.builder()
-                                  .name(volumeName)
-                                  .driver(driver)
-                                  .build();
-            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               getDockerClient().createVolume(volume));
+            Volume.Builder volumeBuilder = Volume.builder()
+                                                 .name(volumeName)
+                                                 .driver(driver);
+            if (driverOpts != null && !driverOpts.isEmpty()) {
+                volumeBuilder.driverOpts(driverOpts);
+            }
+            getDockerClient().createVolume(volumeBuilder.build());
+            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "创建存储卷成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "创建容器挂载卷失败");
+            log.error("创建容器挂载卷失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -52,7 +59,7 @@ public class VolumeController extends BaseController {
             getDockerClient().removeVolume(volumeName);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器挂载卷成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "删除容器挂载卷失败");
+            log.error("删除容器挂载卷失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -76,7 +83,7 @@ public class VolumeController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, volumes));
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取容器挂载卷列表失败");
+            log.error("获取容器挂载卷列表失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -89,7 +96,7 @@ public class VolumeController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                getDockerClient().inspectVolume(volumeName));
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取容器挂载卷失败");
+            log.error("获取容器挂载卷失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
