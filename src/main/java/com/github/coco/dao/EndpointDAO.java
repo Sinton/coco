@@ -62,6 +62,6 @@ public interface EndpointDAO extends BaseDAO {
      *
      * @return
      */
-    @Select("SELECT COUNT(*) AS total")
+    @Select("SELECT COUNT(*) AS total FROM t_endpoint")
     int selectEndpointTotal();
 }
