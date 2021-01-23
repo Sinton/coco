@@ -2,35 +2,31 @@ package com.github.coco.factory;
 
 import com.github.coco.constant.dict.EndpointTypeEnum;
 import com.github.coco.constant.dict.WhetherEnum;
+import com.github.coco.core.AppContext;
 import com.github.coco.entity.Endpoint;
+import com.github.coco.service.EndpointService;
 import com.github.coco.utils.DateHelper;
 import com.github.coco.utils.EnumHelper;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerHost;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.BasePooledObjectFactory;
+import org.apache.commons.pool2.BaseKeyedPooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 
 /**
  * @author Yan
  */
-public class DockerConnectorFactory extends BasePooledObjectFactory<DockerClient> {
-    private Endpoint endpoint;
-
-    public DockerConnectorFactory(Endpoint endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public DockerConnectorFactory() {
-        this.endpoint.setPublicIp(DockerHost.defaultAddress());
-        this.endpoint.setPort(DockerHost.defaultPort());
-    }
+@Slf4j
+public class DockerConnectorFactory extends BaseKeyedPooledObjectFactory<Integer, DockerClient> {
+    private EndpointService endpointService = AppContext.getBean(EndpointService.class);
 
     @Override
-    public DockerClient create() {
+    public DockerClient create(Integer endpointId) {
+        Endpoint endpoint = endpointService.getEndpoint(Endpoint.builder().id(endpointId).build());
         DefaultDockerClient.Builder builder = new DefaultDockerClient.Builder();
         try {
             EndpointTypeEnum endpointType = EnumHelper.getEnumType(EndpointTypeEnum.class,

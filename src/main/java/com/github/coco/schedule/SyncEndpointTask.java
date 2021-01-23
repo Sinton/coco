@@ -2,14 +2,16 @@ package com.github.coco.schedule;
 
 import com.alibaba.fastjson.JSON;
 import com.github.coco.constant.DbConstant;
+import com.github.coco.constant.DockerConstant;
 import com.github.coco.constant.dict.EndpointStatusEnum;
 import com.github.coco.service.EndpointService;
 import com.github.coco.service.StackService;
 import com.github.coco.utils.DockerConnectorHelper;
-import com.github.coco.utils.LoggerHelper;
 import com.github.coco.utils.StringHelper;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Image;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -20,10 +22,9 @@ import java.util.Objects;
 /**
  * @author Yan
  */
+@Slf4j
 @Component
 public class SyncEndpointTask {
-    private static final String PING_RESULT = "OK";
-
     @Resource
     private EndpointService endpointService;
 
@@ -38,12 +39,15 @@ public class SyncEndpointTask {
                 if (dockerClient != null) {
                     // 状态
                     int status;
-                    if (PING_RESULT.equals(dockerClient.ping())) {
+                    if (dockerClient.ping().equals(DockerConstant.PING)) {
                         status = EndpointStatusEnum.UP.getCode();
                         // docker配置
                         Map<String, Object> dockerConfig = new HashMap<>(16);
-                        if (dockerClient.info().swarm().controlAvailable()) {
+                        if (dockerClient.info().swarm() != null && dockerClient.info().swarm().controlAvailable()) {
                             dockerConfig.put("services", dockerClient.listServices().size());
+                            dockerConfig.put("cluster", "Swarm集群");
+                        } else {
+                            dockerConfig.put("cluster", "单点");
                         }
                         dockerConfig.put("stacks", stackService.getStacks(endpoint.getPublicIp()).size());
                         Map<String, Object> imageConfig = new HashMap<>(4);
@@ -62,7 +66,6 @@ public class SyncEndpointTask {
                         dockerConfig.put("containers", containerConfig);
 
                         dockerConfig.put("version", dockerClient.version().version());
-                        dockerConfig.put("cluster", dockerClient.info().swarm() != null && dockerClient.info().swarm().controlAvailable() ? "Swarm集群" : "单点");
                         endpoint.setDockerConfig(JSON.toJSONString(dockerConfig));
 
                         // 资源
@@ -77,14 +80,14 @@ public class SyncEndpointTask {
                     endpoint.setUpdateDateTime(System.currentTimeMillis());
                     endpointService.modifyEndpoint(endpoint);
                 }
-            } catch (Exception e) {
+            } catch (DockerException | InterruptedException e) {
                 Map<String, String> message = new HashMap<>(4);
-                message.put("publicIp", endpoint.getPublicIp());
                 message.put("name", endpoint.getName());
+                message.put("publicIp", endpoint.getPublicIp());
                 message.put("endpointUrl", endpoint.getEndpointUrl());
-                LoggerHelper.fmtError(getClass(), e, "更新Docker终端服务%s异常", JSON.toJSONString(message));
+                log.error(String.format("更新Docker终端服务%s时发生异常", JSON.toJSONString(message)), e);
             } finally {
-                DockerConnectorHelper.returnDockerClient(dockerClient);
+                DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
             }
         });
     }

@@ -8,8 +8,8 @@ import com.github.coco.service.EndpointService;
 import com.github.coco.service.StackService;
 import com.github.coco.utils.DockerConnectorHelper;
 import com.github.coco.utils.ListHelper;
-import com.github.coco.utils.LoggerHelper;
 import com.spotify.docker.client.DockerClient;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 /**
  * @author Yan
  */
+@Slf4j
 @Component
 public class SyncStackTask {
     @Resource
@@ -90,9 +91,9 @@ public class SyncStackTask {
                                                    .map(Stack::getName)
                                                    .collect(Collectors.toList()));
             } catch (Exception e) {
-                LoggerHelper.fmtError(getClass(), e, "获取应用栈信息异常");
+                log.error("获取应用栈信息异常", e);
             } finally {
-                DockerConnectorHelper.returnDockerClient(dockerClient);
+                DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
             }
 
             // 更新调整当前服务终端的应用栈信息
@@ -102,7 +103,7 @@ public class SyncStackTask {
                 // docker-compose 应用栈
                 adjustDbStacks(dbComposeStacks, composeStacks, StackTypeEnum.COMPOSE, endpoint.getPublicIp());
             } catch (Exception e) {
-                LoggerHelper.fmtError(getClass(), e, "更新应用栈信息异常");
+                log.error("更新应用栈信息异常", e);
             }
         });
     }
