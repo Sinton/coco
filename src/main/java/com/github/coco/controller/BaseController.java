@@ -19,12 +19,12 @@ public class BaseController {
     protected ApiResponseDTO apiResponseDTO = new ApiResponseDTO();
 
     protected DockerClient getDockerClient() {
-        String token = RuntimeContextHelper.getToken().toString();
+        String token = RuntimeContextHelper.getToken();
         return globalCache.getDockerClient(token);
     }
 
     protected void setDockerClient(DockerClient dockerClient) {
-        String token = RuntimeContextHelper.getToken().toString();
+        String token = RuntimeContextHelper.getToken();
         globalCache.putDockerClient(token, dockerClient);
     }
 
@@ -32,7 +32,7 @@ public class BaseController {
      * 清理Token
      */
     protected void evictToken() {
-        String token = RuntimeContextHelper.getToken().toString();
+        String token = RuntimeContextHelper.getToken();
         globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).evict(token);
         globalCache.removeDockerClient(token);
         globalCache.removeDockerClient(token);

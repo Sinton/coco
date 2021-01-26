@@ -7,8 +7,8 @@ import com.github.coco.core.RuntimeContext;
  * @author Yan
  */
 public class RuntimeContextHelper {
-    public static Object getToken() {
-        return get(GlobalConstant.TOKEN);
+    public static String getToken() {
+        return String.valueOf(get(GlobalConstant.TOKEN));
     }
 
     public static Object get(String key) {
