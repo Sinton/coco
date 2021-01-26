@@ -2,15 +2,18 @@ package com.github.coco.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.cache.GlobalCache;
 import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.ErrorConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.EndpointTypeEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.entity.Endpoint;
+import com.github.coco.entity.User;
 import com.github.coco.schedule.SyncEndpointTask;
 import com.github.coco.service.EndpointService;
 import com.github.coco.utils.DockerConnectorHelper;
+import com.github.coco.utils.RuntimeContextHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerHost;
 import lombok.extern.slf4j.Slf4j;
@@ -50,12 +53,14 @@ public class EndpointController extends BaseController {
         // 检查是否已存在
         Endpoint endpoint = endpointService.getEndpoint(Endpoint.builder().publicIp(publicIp).build());
         if (endpoint == null) {
+            User cacheUser = globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(RuntimeContextHelper.getToken(), User.class);
             endpoint = Endpoint.builder()
                                .name(name)
                                .publicIp(publicIp)
                                .port(port)
                                .endpointUrl(endpointUrl)
                                .endpointType(EndpointTypeEnum.URL.getCode())
+                               .owner(cacheUser.getUid())
                                .build();
             try {
                 endpointService.createEndpoint(endpoint);

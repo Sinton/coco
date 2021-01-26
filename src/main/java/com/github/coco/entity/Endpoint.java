@@ -21,4 +21,5 @@ public class Endpoint {
     private Integer tlsEnable;
     private String tlsConfig;
     private Long updateDateTime;
+    private Integer owner;
 }
