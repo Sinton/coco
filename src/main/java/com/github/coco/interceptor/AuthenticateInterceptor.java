@@ -6,7 +6,7 @@ import com.github.coco.constant.GlobalConstant;
 import com.github.coco.core.AppContext;
 import com.github.coco.dto.ApiResponseDTO;
 import com.github.coco.entity.User;
-import com.github.coco.utils.LoggerHelper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -15,11 +15,13 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
  * @author Yan
  */
+@Slf4j
 @Component
 public class AuthenticateInterceptor implements HandlerInterceptor {
     private GlobalCache globalCache = AppContext.getBean(GlobalCache.class);
@@ -41,7 +43,7 @@ public class AuthenticateInterceptor implements HandlerInterceptor {
             if (globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(token, User.class) != null) {
                 return true;
             } else {
-                printJson(response);
+                printContent(response);
                 return false;
             }
         } else {
@@ -53,23 +55,19 @@ public class AuthenticateInterceptor implements HandlerInterceptor {
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
     }
 
-    private void printJson(HttpServletResponse response) {
-        ApiResponseDTO apiResponseDTO = new ApiResponseDTO();
-        String content = JSON.toJSONString(apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "token过期,请重新登陆"));
-        printContent(response, content);
-    }
-
-    private void printContent(HttpServletResponse response, String content) {
+    private void printContent(HttpServletResponse response) {
+        String content = JSON.toJSONString(new ApiResponseDTO().returnResult(GlobalConstant.SUCCESS_CODE, "token过期,请重新登陆"));
         try {
             response.reset();
             response.setContentType("application/json");
             response.setHeader("Cache-Control", "no-store");
             response.setCharacterEncoding("UTF-8");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             PrintWriter pw = response.getWriter();
             pw.write(content);
             pw.flush();
-        } catch (Exception e) {
-            LoggerHelper.fmtError(AuthenticateInterceptor.class, e, "");
+        } catch (IOException e) {
+            log.error("", e);
         }
     }
 }
