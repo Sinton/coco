@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 @Builder
 public class Stack {
-    private String id;
+    private Integer id;
     private String name;
     private Integer status;
     private Integer type;

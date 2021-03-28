@@ -17,18 +17,13 @@ public class StackServiceImpl implements StackService {
     private StackDAO stackDAO;
 
     @Override
-    public void createStack(Stack stack) {
-        stackDAO.insertStack(stack);
+    public int createStack(Stack stack) {
+        return stackDAO.insertStack(stack);
     }
 
     @Override
     public int removeStack(Stack stack) {
         return stackDAO.deleteStack(stack);
-    }
-
-    @Override
-    public int removeStack(String stackId) {
-        return 0;
     }
 
     @Override
@@ -42,12 +37,17 @@ public class StackServiceImpl implements StackService {
     }
 
     @Override
-    public Stack getStack(String stackId) {
-        return null;
-    }
-
-    @Override
     public List<Stack> getStacks(String endpoint) {
         return stackDAO.selectStacks(endpoint);
+    }
+
+    /*@Override
+    public List<Stack> getStacks(int pageNo, int pageSize) {
+        return stackDAO.selectStacks((pageNo - 1) * pageSize, pageSize);
+    }*/
+
+    @Override
+    public int getStackTotal() {
+        return stackDAO.selectStackTotal();
     }
 }

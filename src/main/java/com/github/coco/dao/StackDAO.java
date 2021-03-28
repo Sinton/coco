@@ -1,6 +1,7 @@
 package com.github.coco.dao;
 
 import com.github.coco.entity.Stack;
+import com.github.coco.provider.StackSqlProvider;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -10,18 +11,54 @@ import java.util.List;
  */
 @Mapper
 public interface StackDAO extends BaseDAO {
-    @Insert("INSERT INTO t_stack(id, name, type, endpoint) VALUES (#{id}, #{name}, #{type}, #{endpoint});")
-    void insertStack(Stack stack);
+    /**
+     * 添加应用栈
+     *
+     * @param stack
+     * @return
+     */
+    @InsertProvider(type = StackSqlProvider.class, method = "insertStack")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
+    int insertStack(Stack stack);
 
-    @Delete("DELETE FROM t_stack WHERE name = #{name} AND type = #{type} AND endpoint = #{endpoint};")
+    /**
+     * 删除应用栈
+     *
+     * @param stack
+     * @return
+     */
+    @DeleteProvider(type = StackSqlProvider.class, method = "deleteStack")
     int deleteStack(Stack stack);
 
-    @Update("UPDATE t_stack SET name = #{name} WHERE name = #{name} AND type = #{type} AND endpoint = #{endpoint};")
+    /**
+     * 更新应用栈
+     *
+     * @param stack
+     * @return
+     */
+    @UpdateProvider(type = StackSqlProvider.class, method = "updateStack")
     int updateStack(Stack stack);
 
-    @Select("SELECT * FROM t_stack WHERE name = #{name} AND type = #{type} AND endpoint = #{endpoint};")
+    /**
+     * 查询应用栈
+     *
+     * @param stack
+     * @return
+     */
+    @SelectProvider(type = StackSqlProvider.class, method = "selectStack")
     Stack selectStack(Stack stack);
 
     @Select("SELECT * FROM t_stack WHERE endpoint = #{endpoint};")
     List<Stack> selectStacks(@Param("endpoint") String endpoint);
+
+    /*@Select("SELECT * FROM t_endpoint LIMIT #{offset},#{limit}")
+    List<Stack> selectStacks(@Param("offset") int offset, @Param("limit") int limit);*/
+
+    /**
+     * 查询Stack总数
+     *
+     * @return
+     */
+    @Select("SELECT COUNT(*) AS total FROM t_stack")
+    int selectStackTotal();
 }
