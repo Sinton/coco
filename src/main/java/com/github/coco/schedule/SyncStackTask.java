@@ -9,13 +9,14 @@ import com.github.coco.service.StackService;
 import com.github.coco.utils.DockerConnectorHelper;
 import com.github.coco.utils.ListHelper;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +31,7 @@ public class SyncStackTask {
     @Resource
     private StackService stackService;
 
+    @Scheduled(fixedDelayString = "${coco.sync-data.stack-interval}")
     public void syncStacks() {
         List<String> swarmStacks = new ArrayList<>();
         List<String> composeStacks = new ArrayList<>();
@@ -37,64 +39,66 @@ public class SyncStackTask {
         List<String> dbComposeStacks = new ArrayList<>();
         endpointService.getEndpoints(DbConstant.PAGE_NO, DbConstant.PAGE_SIZE).forEach(endpoint -> {
             DockerClient dockerClient = DockerConnectorHelper.borrowDockerClient(endpoint);
-            try {
-                if (dockerClient != null) {
-                    // 通过容器的标签筛选docker-compose应用栈
-                    dockerClient.listContainers(DockerClient.ListContainersParam.allContainers()).forEach(container -> {
-                        if (container.labels() != null && !container.labels().isEmpty()) {
-                            String stackName;
-                            if (container.labels().containsKey(DockerConstant.SWARM_STACK_LABEL)) {
-                                stackName = container.labels().get(DockerConstant.SWARM_STACK_LABEL);
-                                if (!swarmStacks.contains(stackName)) {
-                                    swarmStacks.add(stackName);
-                                }
-                            } else if (container.labels().containsKey(DockerConstant.COMPOSE_STACK_LABEL)) {
-                                stackName = container.labels().get(DockerConstant.COMPOSE_STACK_LABEL);
-                                if (!composeStacks.contains(stackName)) {
-                                    composeStacks.add(stackName);
-                                }
-                            }
-                        }
-                    });
-
-                    // 是否是Swarm集群
-                    if (dockerClient.info().swarm() != null && dockerClient.info().swarm().controlAvailable()) {
-                        dockerClient.listServices().forEach(service -> {
-                            if (service.spec().labels() != null && !service.spec().labels().isEmpty()) {
+            if (dockerClient != null) {
+                try {
+                    if (dockerClient.ping().equals(DockerConstant.PING)) {
+                        // 通过容器的标签筛选docker-compose应用栈
+                        dockerClient.listContainers(DockerClient.ListContainersParam.allContainers()).forEach(container -> {
+                            if (container.labels() != null && !container.labels().isEmpty()) {
                                 String stackName;
-                                if (service.spec().labels().containsKey(DockerConstant.SWARM_STACK_LABEL)) {
-                                    stackName = service.spec().labels().get(DockerConstant.SWARM_STACK_LABEL);
+                                if (container.labels().containsKey(DockerConstant.SWARM_STACK_LABEL)) {
+                                    stackName = container.labels().get(DockerConstant.SWARM_STACK_LABEL);
                                     if (!swarmStacks.contains(stackName)) {
                                         swarmStacks.add(stackName);
                                     }
-                                } else if (service.spec().labels().containsKey(DockerConstant.COMPOSE_STACK_LABEL)) {
-                                    stackName = service.spec().labels().get(DockerConstant.COMPOSE_STACK_LABEL);
+                                } else if (container.labels().containsKey(DockerConstant.COMPOSE_STACK_LABEL)) {
+                                    stackName = container.labels().get(DockerConstant.COMPOSE_STACK_LABEL);
                                     if (!composeStacks.contains(stackName)) {
                                         composeStacks.add(stackName);
                                     }
                                 }
                             }
                         });
-                    }
-                }
 
-                dbSwarmStacks.addAll(stackService.getStacks(endpoint.getPublicIp())
-                                                 .stream()
-                                                 .filter(item -> item.getType().equals(StackTypeEnum.SWARM.getCode()) &&
-                                                                 item.getEndpoint().equals(endpoint.getPublicIp()))
-                                                 .map(Stack::getName)
-                                                 .collect(Collectors.toList()));
-                dbComposeStacks.addAll(stackService.getStacks(endpoint.getPublicIp())
-                                                   .stream()
-                                                   .filter(item -> item.getType().equals(StackTypeEnum.COMPOSE.getCode()) &&
-                                                                   item.getEndpoint().equals(endpoint.getPublicIp()))
-                                                   .map(Stack::getName)
-                                                   .collect(Collectors.toList()));
-            } catch (Exception e) {
-                log.error("获取应用栈信息异常", e);
-            } finally {
-                DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
+                        // 是否是Swarm集群
+                        if (dockerClient.info().swarm() != null && dockerClient.info().swarm().controlAvailable()) {
+                            dockerClient.listServices().forEach(service -> {
+                                if (service.spec().labels() != null && !service.spec().labels().isEmpty()) {
+                                    String stackName;
+                                    if (service.spec().labels().containsKey(DockerConstant.SWARM_STACK_LABEL)) {
+                                        stackName = service.spec().labels().get(DockerConstant.SWARM_STACK_LABEL);
+                                        if (!swarmStacks.contains(stackName)) {
+                                            swarmStacks.add(stackName);
+                                        }
+                                    } else if (service.spec().labels().containsKey(DockerConstant.COMPOSE_STACK_LABEL)) {
+                                        stackName = service.spec().labels().get(DockerConstant.COMPOSE_STACK_LABEL);
+                                        if (!composeStacks.contains(stackName)) {
+                                            composeStacks.add(stackName);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                } catch (DockerException | InterruptedException e) {
+                    log.error("获取应用栈信息异常", e);
+                } finally {
+                    DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
+                }
             }
+
+            dbSwarmStacks.addAll(stackService.getStacks(endpoint.getPublicIp())
+                                             .stream()
+                                             .filter(item -> item.getType().equals(StackTypeEnum.SWARM.getCode()) &&
+                                                             item.getEndpoint().equals(endpoint.getPublicIp()))
+                                             .map(Stack::getName)
+                                             .collect(Collectors.toList()));
+            dbComposeStacks.addAll(stackService.getStacks(endpoint.getPublicIp())
+                                               .stream()
+                                               .filter(item -> item.getType().equals(StackTypeEnum.COMPOSE.getCode()) &&
+                                                               item.getEndpoint().equals(endpoint.getPublicIp()))
+                                               .map(Stack::getName)
+                                               .collect(Collectors.toList()));
 
             // 更新调整当前服务终端的应用栈信息
             try {
@@ -124,7 +128,7 @@ public class SyncStackTask {
         ListHelper.getRightJoinList(dbStacks, stacks).forEach(stackName -> {
             // 要新增的应用栈
             if (stackService.getStack(builder.name(stackName).build()) == null) {
-                stackService.createStack(builder.id(UUID.randomUUID().toString()).name(stackName).build());
+                stackService.createStack(builder.name(stackName).build());
             }
         });
 
@@ -139,3 +143,4 @@ public class SyncStackTask {
         });
     }
 }
+

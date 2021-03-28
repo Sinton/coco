@@ -9,10 +9,8 @@ spring:
       suffix: .html
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
-      enabled: true
-      file-size-threshold: 50MB
+      max-file-size: -1
+      max-request-size: -1
   cache:
     type: ehcache
 
@@ -56,3 +54,10 @@ socketio:
   pingTimeout: 6000000
   # Ping消息间隔（毫秒），默认25秒。客户端向服务器发送一条心跳消息间隔
   pingInterval: 25000
+
+coco:
+  sync-data:
+    # 应用栈数据同步时间间隔（默认30秒）
+    stack-interval: 30000
+    # 服务终端数据同步时间间隔（默认30秒）
+    endpoint-interval: 30000

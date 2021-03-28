@@ -12,6 +12,8 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Image;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -31,23 +33,32 @@ public class SyncEndpointTask {
     @Resource
     private StackService stackService;
 
+    @Scheduled(fixedDelayString = "${coco.sync-data.endpoint-interval}")
     public void syncEndpoints() {
         int endpointTotal = endpointService.getEndpointTotal();
         endpointService.getEndpoints(DbConstant.PAGE_NO, endpointTotal).forEach(endpoint -> {
+            // TODO mybatis 值为null的BUG
+            String bugVlaue = "0";
+            if (StringUtils.isBlank(endpoint.getResources()) || endpoint.getResources().equals(bugVlaue)) {
+                endpoint.setResources(null);
+            }
+            if (StringUtils.isBlank(endpoint.getDockerConfig()) || endpoint.getDockerConfig().equals(bugVlaue)) {
+                endpoint.setDockerConfig(null);
+            }
             DockerClient dockerClient = DockerConnectorHelper.borrowDockerClient(endpoint);
-            try {
-                if (dockerClient != null) {
-                    // 状态
-                    int status;
+            if (dockerClient != null) {
+                // 状态
+                int status = EndpointStatusEnum.DOWN.getCode();
+                try {
                     if (dockerClient.ping().equals(DockerConstant.PING)) {
                         status = EndpointStatusEnum.UP.getCode();
                         // docker配置
                         Map<String, Object> dockerConfig = new HashMap<>(16);
                         if (dockerClient.info().swarm() != null && dockerClient.info().swarm().controlAvailable()) {
                             dockerConfig.put("services", dockerClient.listServices().size());
-                            dockerConfig.put("cluster", "Swarm集群");
+                            dockerConfig.put("mode", "cluster");
                         } else {
-                            dockerConfig.put("cluster", "单点");
+                            dockerConfig.put("mode", "standalone");
                         }
                         dockerConfig.put("stacks", stackService.getStacks(endpoint.getPublicIp()).size());
                         Map<String, Object> imageConfig = new HashMap<>(4);
@@ -73,21 +84,19 @@ public class SyncEndpointTask {
                         resources.put("memory", StringHelper.convertSize(dockerClient.info().memTotal()));
                         resources.put("cpus", String.format("%s 核", dockerClient.info().cpus()));
                         endpoint.setResources(JSON.toJSONString(resources));
-                    } else {
-                        status = EndpointStatusEnum.DOWN.getCode();
                     }
+                } catch (DockerException | InterruptedException e) {
+                    Map<String, String> message = new HashMap<>(4);
+                    message.put("name", endpoint.getName());
+                    message.put("publicIp", endpoint.getPublicIp());
+                    message.put("endpointUrl", endpoint.getEndpointUrl());
+                    log.error(String.format("更新Docker终端服务%s时发生异常", JSON.toJSONString(message)), e);
+                } finally {
                     endpoint.setStatus(status);
                     endpoint.setUpdateDateTime(System.currentTimeMillis());
                     endpointService.modifyEndpoint(endpoint);
+                    DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
                 }
-            } catch (DockerException | InterruptedException e) {
-                Map<String, String> message = new HashMap<>(4);
-                message.put("name", endpoint.getName());
-                message.put("publicIp", endpoint.getPublicIp());
-                message.put("endpointUrl", endpoint.getEndpointUrl());
-                log.error(String.format("更新Docker终端服务%s时发生异常", JSON.toJSONString(message)), e);
-            } finally {
-                DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
             }
         });
     }
