@@ -12,24 +12,10 @@ create table if not exists t_endpoint
     update_date_time integer,
     tls_config       text,
     endpoint_type    integer default 1,
-    owner            int
+    owner            integer
 );
 
 create unique index if not exists t_endpoint_id_uindex on t_endpoint (id);
-
-create table if not exists t_host
-(
-    id         integer not null constraint t_host_pk primary key autoincrement,
-    ip         text    not null,
-    port       integer default 22,
-    user       text    default 'root',
-    password   text,
-    resource   text,
-    hostname   text,
-    dockerized char(1) default 0
-);
-
-create unique index if not exists t_host_id_uindex on t_host (id);
 
 create table if not exists t_notification
 (
@@ -44,12 +30,12 @@ create table if not exists t_setting
     id    text not null constraint t_setting_pk primary key,
     key   text,
     value text,
-    owner int
+    owner integer
 );
 
 create table if not exists t_stack
 (
-    id           text not null constraint t_stack_pk primary key,
+    id           integer not null constraint t_stack_pk primary key autoincrement,
     name         text default '' not null,
     status       integer default '0' not null,
     type         integer default 0,
