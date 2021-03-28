@@ -47,8 +47,8 @@ public class NetworkController extends BaseController {
     @WebLog
     @PostMapping(value = "/create")
     public Map<String, Object> createNetwork(@RequestBody Map<String, Object> params) {
-        String networkName = String.valueOf(params.getOrDefault("name", ""));
-        String driver = String.valueOf(params.getOrDefault("driver", ""));
+        String networkName = Objects.toString(params.get("name"), "");
+        String driver = Objects.toString(params.get("driver"), "");
         Map<String, String> labels = JSON.parseObject(JSON.toJSONString(params.getOrDefault("labels", "{}")),
                                                       new TypeReference<Map<String, String>>() {});
         Map<String, String> driverOpts = JSON.parseObject(JSON.toJSONString(params.getOrDefault("driverOpts", "{}")),
@@ -92,7 +92,7 @@ public class NetworkController extends BaseController {
     @WebLog
     @PostMapping(value = "/remove")
     public Map<String, Object> removeNetwork(@RequestBody Map<String, Object> params) {
-        String networkId = String.valueOf(params.getOrDefault("networkId", ""));
+        String networkId = Objects.toString(params.get("networkId"), "");
         try {
             getDockerClient().removeNetwork(networkId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除容器网络成功");

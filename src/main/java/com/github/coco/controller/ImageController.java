@@ -51,6 +51,7 @@ public class ImageController extends BaseController {
         // TODO 对接Docker Registry
         final String imageFullName = imageName;
         DockerClient dockerClient = getDockerClient();
+        String token = getToken();
 
         ThreadPoolExecutor threadPool = ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE);
         threadPool.execute(() -> {
@@ -66,7 +67,7 @@ public class ImageController extends BaseController {
                         }
                     } else {
                         log.info(String.format("推送消息：%s", JSON.toJSONString(message)));
-                        SocketEventHandle.clientMap.forEach((token, client) -> client.sendEvent("pull", message));
+                        globalCache.getSocketClient(token).sendEvent("pull", message);
                     }
                 });
             } catch (DockerException | InterruptedException e) {
@@ -148,8 +149,8 @@ public class ImageController extends BaseController {
     @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageImages(@RequestBody Map<String, Object> params) {
-        int pageNo   = Integer.parseInt(String.valueOf(params.getOrDefault("pageNo", DbConstant.PAGE_NO)));
-        int pageSize = Integer.parseInt(String.valueOf(params.getOrDefault("pageSize", DbConstant.PAGE_SIZE)));
+        int pageNo   = Integer.parseInt(Objects.toString(params.getOrDefault("pageNo", DbConstant.PAGE_NO)));
+        int pageSize = Integer.parseInt(Objects.toString(params.getOrDefault("pageSize", DbConstant.PAGE_SIZE)));
         List<DockerClient.ListImagesParam> filters = new ArrayList<>();
         if (params.get(DockerFilterHelper.FILTER_KEY) != null) {
             String filter = JSON.toJSONString(params.get(DockerFilterHelper.FILTER_KEY));

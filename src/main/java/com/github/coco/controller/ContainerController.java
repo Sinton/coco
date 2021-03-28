@@ -309,8 +309,8 @@ public class ContainerController extends BaseController {
     @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageContainers(@RequestBody Map<String, Object> params) {
-        int pageNo = Integer.parseInt(String.valueOf(params.getOrDefault("pageNo", DbConstant.PAGE_NO)));
-        int pageSize = Integer.parseInt(String.valueOf(params.getOrDefault("pageSize", DbConstant.PAGE_SIZE)));
+        int pageNo = Integer.parseInt(Objects.toString(params.getOrDefault("pageNo", DbConstant.PAGE_NO)));
+        int pageSize = Integer.parseInt(Objects.toString(params.getOrDefault("pageSize", DbConstant.PAGE_SIZE)));
         List<DockerClient.ListContainersParam> filters = new ArrayList<>();
         if (params.get(DockerFilterHelper.FILTER_KEY) != null) {
             String filter = JSON.toJSONString(params.get(DockerFilterHelper.FILTER_KEY));
