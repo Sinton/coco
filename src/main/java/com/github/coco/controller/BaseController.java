@@ -2,6 +2,8 @@ package com.github.coco.controller;
 
 import com.github.coco.cache.GlobalCache;
 import com.github.coco.dto.ApiResponseDTO;
+import com.github.coco.entity.Endpoint;
+import com.github.coco.entity.User;
 import com.github.coco.utils.RuntimeContextHelper;
 import com.spotify.docker.client.DockerClient;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +30,24 @@ public class BaseController {
         globalCache.putDockerClient(token, dockerClient);
     }
 
+    protected Endpoint getEndpoint() {
+        String token = RuntimeContextHelper.getToken();
+        return globalCache.getEndpoint(token);
+    }
+
+    protected void setEndpoint(Endpoint endpoint) {
+        String token = RuntimeContextHelper.getToken();
+        globalCache.putEndpoint(token, endpoint);
+    }
+
+    protected String getToken() {
+        return RuntimeContextHelper.getToken();
+    }
+
+    protected Integer getUserId() {
+        return globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(getToken(), User.class).getUid();
+    }
+
     /**
      * 清理Token
      */
@@ -35,6 +55,7 @@ public class BaseController {
         String token = RuntimeContextHelper.getToken();
         globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).evict(token);
         globalCache.removeDockerClient(token);
-        globalCache.removeDockerClient(token);
+        globalCache.removeSocketClient(token);
+        globalCache.removeEndpoint(token);
     }
 }
