@@ -6,6 +6,7 @@ import com.github.coco.compose.ComposeOptionsBuilder;
 import com.github.coco.constant.DockerConstant;
 import com.github.coco.constant.GlobalConstant;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
@@ -23,6 +24,7 @@ public class DockerComposeHelper {
      * docker-compose二进制执行程序
      */
     private static final String DEFAULT_COMPOSE_BIN_FILENAME    = "docker-compose";
+
     /**
      * docker-compose.yml文件存储目录
      */
@@ -31,8 +33,9 @@ public class DockerComposeHelper {
     /**
      * compose工程文件存储路径
      */
-    private static final String DEFAULT_COMPOSE_PATH            = String.format("%s/%s",
-                                                                                GlobalConstant.DEFAULT_STORE_PATH,
+    private static final String DEFAULT_COMPOSE_PATH            = String.format("%s%s%s",
+                                                                                GlobalConstant.DEFAULT_STORAGE_PATH,
+                                                                                IOUtils.DIR_SEPARATOR,
                                                                                 DEFAULT_COMPOSE_STORE_DIRECTORY);
 
     public enum OperateEnum {
@@ -114,8 +117,6 @@ public class DockerComposeHelper {
      * @param composeConfig
      */
     public static void composeOperate(OperateEnum operate, ComposeConfig composeConfig) {
-        String directory = String.format("%s/%s", DEFAULT_COMPOSE_PATH, composeConfig.getProjectId());
-        String filePath = String.format("%s/%s", directory, DockerConstant.COMPOSE_STACK_FILENAME);
         ProcessResponseStreamEnum currProcessResponseStream = ProcessResponseStreamEnum.ALL;
 
         // 构建docker-compose Options参数
@@ -129,7 +130,7 @@ public class DockerComposeHelper {
         if (composeConfig.getDebug()) {
             optionsBuilder.verbose();
         }
-        optionsBuilder.composeFile(filePath).build();
+        optionsBuilder.composeFile(getComposeYamlFilePath(composeConfig.getProjectId())).build();
 
         // 构建docker-compose Commands参数
         ComposeCommandsBuilder.Builder commandsBuilder = ComposeCommandsBuilder.builder();
@@ -268,5 +269,16 @@ public class DockerComposeHelper {
         } catch (IOException e) {
             log.error("处理进程输出异常", e);
         }
+    }
+
+    /**
+     * 获取compose类型应用栈docker-compose.yml文件的存储路径
+     *
+     * @param projectId
+     * @return
+     */
+    public static String getComposeYamlFilePath(Integer projectId) {
+        String directory = String.format("%s%s%s", DEFAULT_COMPOSE_PATH, IOUtils.DIR_SEPARATOR, projectId);
+        return String.format("%s%s%s", directory, IOUtils.DIR_SEPARATOR, DockerConstant.COMPOSE_STACK_FILENAME);
     }
 }
