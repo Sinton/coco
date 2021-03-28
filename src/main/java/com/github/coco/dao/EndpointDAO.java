@@ -15,10 +15,11 @@ public interface EndpointDAO extends BaseDAO {
      * 添加Endpoint
      *
      * @param endpoint
+     * @return
      */
-    @Insert("INSERT INTO t_endpoint(public_ip, port, name, endpoint_url) " +
-            "VALUES (#{publicIp}, #{port}, #{name}, #{endpointUrl})")
-    void insertEndpoint(Endpoint endpoint);
+    @InsertProvider(type = EndpointSqlProvider.class, method = "insertEndpoint")
+    @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
+    int insertEndpoint(Endpoint endpoint);
 
     /**
      * 删除Endpoint
