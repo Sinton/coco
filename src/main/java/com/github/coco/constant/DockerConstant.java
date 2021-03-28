@@ -10,6 +10,11 @@ public class DockerConstant {
     public static final String PING                   = "OK";
 
     /**
+     * 默认Endpoint在Unix下的连接URI
+     */
+    public static final String DEFAULT_UNIX_URI       = "unix://";
+
+    /**
      * 默认镜像仓库中心
      */
     public static final String DEFAULT_IMAGE_REGISTRY = "docker.io";

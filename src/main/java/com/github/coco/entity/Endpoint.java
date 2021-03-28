@@ -22,4 +22,20 @@ public class Endpoint {
     private String tlsConfig;
     private Long updateDateTime;
     private Integer owner;
+
+    public Endpoint(Integer id, String name, String publicIp, Integer port, String endpointUrl, Integer endpointType, Integer status, String resources, String dockerConfig, Integer tlsEnable, String tlsConfig, Long updateDateTime, Integer owner) {
+        this.id = id;
+        this.name = name;
+        this.publicIp = publicIp;
+        this.port = port;
+        this.endpointUrl = endpointUrl;
+        this.endpointType = endpointType;
+        this.status = status;
+        this.resources = resources;
+        this.dockerConfig = dockerConfig;
+        this.tlsEnable = tlsEnable;
+        this.tlsConfig = tlsConfig;
+        this.updateDateTime = updateDateTime;
+        this.owner = owner;
+    }
 }
