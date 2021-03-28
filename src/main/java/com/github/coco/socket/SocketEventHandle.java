@@ -1,6 +1,7 @@
 package com.github.coco.socket;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.OnConnect;
@@ -15,10 +16,12 @@ import com.github.coco.thread.OutPutThread;
 import com.github.coco.utils.*;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerHost;
 import com.spotify.docker.client.exceptions.DockerException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -35,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author Yan
  */
+@Slf4j
 @Component
 public class SocketEventHandle {
     public static final String SOCKET_EVENT_CONNECT_TERMINAL           = "connectTerminal";
@@ -45,7 +49,6 @@ public class SocketEventHandle {
     @Resource
     private GlobalCache globalCache;
 
-    public static volatile Map<String, SocketIOClient> clientMap = new ConcurrentHashMap<>(16);
     private static Map<String, ExecSession> execSessionMap = new ConcurrentHashMap<>(16);
     private static Map<String, Object> terminalMap = new ConcurrentHashMap<>(16);
 
@@ -53,8 +56,7 @@ public class SocketEventHandle {
     public void onConnect(SocketIOClient client) {
         String token = client.getHandshakeData().getSingleUrlParam(GlobalConstant.ACCESS_TOKEN);
         globalCache.putSocketClient(token, client);
-        clientMap.put(token, client);
-        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 建立连接", token));
+        log.info(String.format("客户端 %s 建立连接", token));
         initConnection(client);
     }
 
@@ -63,13 +65,12 @@ public class SocketEventHandle {
         String token = client.getHandshakeData().getSingleUrlParam(GlobalConstant.ACCESS_TOKEN);
         client.disconnect();
         globalCache.removeSocketClient(token);
-        clientMap.remove(token);
         disconnectTerminal(client);
-        LoggerHelper.fmtInfo(getClass(), String.format("客户端 %s 断开连接", token));
+        log.info(String.format("客户端 %s 断开连接", token));
     }
 
     @OnEvent(SOCKET_EVENT_CONTAINER_TERMINAL)
-    public void onConnectContainerTerminal(SocketIOClient client, AckRequest request, HashMap<String, Object> params) {
+    public void onConnectContainerTerminal(SocketIOClient client, AckRequest ackRequest, HashMap<String, Object> params) {
         String containerId = Objects.toString(params.get("containerId"), "");
         String cmd         = params.getOrDefault("command", "").toString();
         boolean stdErr     = Boolean.parseBoolean(Objects.toString(params.get("stdErr"), "true"));
@@ -100,8 +101,8 @@ public class SocketEventHandle {
                 getTerminalContent(containerId, client, socket);
                 // resizeTty(dockerClient, execId, 200, 200);
             }
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "与容器[%s]建立终端连接异常", containerId);
+        } catch (DockerException | InterruptedException | IOException e) {
+            log.error(String.format("与容器[%s]建立终端连接异常", containerId), e);
         }
     }
 
@@ -118,7 +119,7 @@ public class SocketEventHandle {
         try {
             dockerClient.execResizeTty(execId, height, width);
         } catch (DockerException | InterruptedException e) {
-            LoggerHelper.fmtError(getClass(), e, "对容器终端调整tty异常");
+            log.error("对容器终端调整tty异常", e);
         }
     }
 
@@ -188,7 +189,7 @@ public class SocketEventHandle {
             });
         } catch (Exception e) {
             disconnectTerminal(client);
-            LoggerHelper.fmtError(getClass(), e, "Terminal连接异常");
+            log.error("Terminal连接异常", e);
         }
     }
 
@@ -208,16 +209,16 @@ public class SocketEventHandle {
                             outputStream.flush();
                         }
                     } catch (IOException e) {
-                        LoggerHelper.fmtError(getClass(), e, "Terminal连接异常");
+                        log.error("Terminal连接异常", e);
                         disconnectTerminal(client);
                     }
                 }
             } else {
-                LoggerHelper.error(getClass(), "不支持的操作");
+                log.error("不支持的操作");
                 disconnectTerminal(client);
             }
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "Json转换异常");
+        } catch (JSONException e) {
+            log.error("Json转换异常", e);
         }
     }
 
@@ -248,8 +249,8 @@ public class SocketEventHandle {
             while ((i = inputStream.read(buffer)) != -1) {
                 client.sendEvent("terminal", new String(Arrays.copyOfRange(buffer, 0, i), StandardCharsets.UTF_8));
             }
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "读取终端命令错误");
+        } catch (JSchException | IOException e) {
+            log.error("读取终端命令错误", e);
         } finally {
             // 关闭所有会话、连接信道、连接
             if (session != null) {
@@ -265,7 +266,7 @@ public class SocketEventHandle {
     }
 
     public void disconnectTerminal(SocketIOClient session) {
-        String sessionId = String.valueOf(session.getSessionId());
+        String sessionId = Objects.toString(session.getSessionId());
         TerminalConnect terminalConnect = (TerminalConnect) terminalMap.get(sessionId);
         if (terminalConnect != null) {
             // 断开连接
@@ -283,11 +284,11 @@ public class SocketEventHandle {
     @Scheduled(fixedDelay = 5 * DateHelper.MINUTE)
     private void clearInvalidSocketClient() {
         List<String> invalidTokens = new ArrayList<>();
-        clientMap.forEach((token, client) -> {
+        globalCache.getSocketClients().forEach((token, client) -> {
             if (globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(token) == null) {
                 invalidTokens.add(token);
             }
         });
-        invalidTokens.forEach(token -> clientMap.remove(token));
+        invalidTokens.forEach(token -> globalCache.removeSocketClient(token));
     }
 }
