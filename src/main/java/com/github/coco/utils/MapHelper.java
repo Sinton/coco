@@ -75,8 +75,12 @@ public class MapHelper {
     }
 
     public static <K, V> Map<K, V> getUnionAllMap(Map<K, V> left, Map<K, V> right, boolean cover) {
-        left.forEach(right::put);
-        return right;
+        if (cover) {
+            left.putAll(right);
+        } else {
+            right.forEach(left::putIfAbsent);
+        }
+        return left;
     }
 
     /**
