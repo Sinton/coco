@@ -15,4 +15,18 @@ public @interface WebLog {
      * @return
      */
     String description() default "";
+
+    /**
+     * 请求入参
+     *
+     * @return
+     */
+    boolean requestArgs() default true;
+
+    /**
+     * 相应出参
+     *
+     * @return
+     */
+    boolean responseArgs() default false;
 }
