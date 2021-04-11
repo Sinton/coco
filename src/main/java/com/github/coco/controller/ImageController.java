@@ -6,7 +6,6 @@ import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.DockerConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
-import com.github.coco.socket.SocketEventHandle;
 import com.github.coco.utils.DockerFilterHelper;
 import com.github.coco.utils.LoggerHelper;
 import com.github.coco.utils.ThreadPoolHelper;
@@ -45,7 +44,7 @@ public class ImageController extends BaseController {
     public void pullImage(@RequestBody Map<String, Object> params) {
         String registry  = Objects.toString(params.get("registry"), DockerConstant.DEFAULT_IMAGE_REGISTRY);
         String imageName = Objects.toString(params.get("imageName"), "");
-        if (!imageName.contains(GlobalConstant.SPACEMARK_COLON)) {
+        if (!imageName.contains(GlobalConstant.SYMBOL_MARK_COLON)) {
             imageName = String.format("%s:%s", imageName, DockerConstant.DEFAULT_IMAGE_VERSION);
         }
         // TODO 对接Docker Registry
@@ -165,7 +164,7 @@ public class ImageController extends BaseController {
                     if (image.repoTags() != null && !image.repoTags().isEmpty()) {
                         return image.repoTags()
                                     .stream()
-                                    .anyMatch(tag -> tag.split(GlobalConstant.SPACEMARK_COLON)[0].contains(searchName));
+                                    .anyMatch(tag -> tag.split(GlobalConstant.SYMBOL_MARK_COLON)[0].contains(searchName));
                     } else {
                         return false;
                     }

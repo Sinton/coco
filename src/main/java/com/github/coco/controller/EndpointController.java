@@ -57,7 +57,7 @@ public class EndpointController extends BaseController {
             if (endpointUrl.startsWith(DockerConstant.DEFAULT_UNIX_URI)) {
                 endpointBuilder.endpointType(EndpointTypeEnum.UNIX.getCode());
             } else {
-                int port = Integer.parseInt(endpointUrl.substring(endpointUrl.indexOf(GlobalConstant.SPACEMARK_COLON) + GlobalConstant.SPACEMARK_COLON.length()));
+                int port = Integer.parseInt(endpointUrl.substring(endpointUrl.indexOf(GlobalConstant.SYMBOL_MARK_COLON) + GlobalConstant.SYMBOL_MARK_COLON.length()));
                 endpointBuilder = endpointBuilder.port(port);
                 endpointBuilder.endpointType(EndpointTypeEnum.URL.getCode());
             }
