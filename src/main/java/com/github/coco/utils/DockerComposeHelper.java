@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 /**
  * @author Yan
@@ -127,7 +128,7 @@ public class DockerComposeHelper {
         if (StringUtils.isNotBlank(composeConfig.getProject())) {
             optionsBuilder.project(composeConfig.getProject());
         }
-        if (composeConfig.getDebug()) {
+        if (composeConfig.getDebug() != null && composeConfig.getDebug()) {
             optionsBuilder.verbose();
         }
         optionsBuilder.composeFile(getComposeYamlFilePath(composeConfig.getProjectId())).build();
@@ -212,6 +213,7 @@ public class DockerComposeHelper {
     private static void execute(String cmd, ProcessResponseStreamEnum processResponseStream) {
         Process process = null;
         try {
+            log.info(String.format("execute [ %s ] shell command", cmd));
             process = new ProcessBuilder().command("sh", "-c", cmd).start();
             Process threadHandleProcess = process;
             if (processResponseStream == ProcessResponseStreamEnum.ALL) {
@@ -221,7 +223,7 @@ public class DockerComposeHelper {
                                     .execute(() -> composeProcessStreamHandler(threadHandleProcess, stream));
                 }
                 int status = process.waitFor();
-                System.out.println("status is " + status);
+                log.info("status is " + status);
             } else {
                 switch (processResponseStream) {
                     case NORMAL:
@@ -238,7 +240,7 @@ public class DockerComposeHelper {
                         break;
                 }
                 int status = process.waitFor();
-                System.out.println("status is " + status);
+                log.info("status is " + status);
             }
         } catch (InterruptedException | IOException e) {
             log.error("执行命令出现异常", e);
@@ -256,14 +258,18 @@ public class DockerComposeHelper {
      * @param inputStream
      */
     private static void composeProcessStreamHandler(Process process, InputStream inputStream) {
+        composeProcessStreamHandler(process, inputStream, log::info);
+    }
+
+    private static void composeProcessStreamHandler(Process process, InputStream inputStream, Consumer<String> consumer) {
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream,
                                                                                       StandardCharsets.UTF_8))) {
             // 循环等待进程输出，判断进程存活则循环获取输出流数据
             while (process.isAlive()) {
                 while (bufferedReader.ready()) {
-                    // TODO 自定义进程输出处理
+                    // 自定义进程输出处理
                     String result = bufferedReader.readLine();
-                    System.out.println(result);
+                    consumer.accept(result);
                 }
             }
         } catch (IOException e) {
