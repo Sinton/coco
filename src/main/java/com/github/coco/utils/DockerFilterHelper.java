@@ -97,14 +97,13 @@ public class DockerFilterHelper {
                     break;
                 case "label":
                     if (value instanceof Map) {
-                        filters.add(DockerClient.ListContainersParam.withLabel("", ""));
+                        ((Map<?, ?>) value).forEach((labelKey, labelValue) -> filters.add(DockerClient.ListContainersParam.withLabel(String.valueOf(labelKey), String.valueOf(labelValue))));
                     } else {
                         filters.add(DockerClient.ListContainersParam.withLabel(value.toString()));
                     }
                     break;
                 case "size":
-                    filters.add(DockerClient.ListContainersParam
-                            .withContainerSizes(Boolean.parseBoolean(value.toString())));
+                    filters.add(DockerClient.ListContainersParam.withContainerSizes(Boolean.parseBoolean(value.toString())));
                     break;
                 default:
                     filters.add(DockerClient.ListContainersParam.filter(key, value.toString()));
