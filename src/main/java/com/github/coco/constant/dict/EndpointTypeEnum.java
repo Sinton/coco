@@ -16,6 +16,7 @@ public enum EndpointTypeEnum {
      * 代理
      */
     AGENT(3, "agent");
+
     int code;
     String type;
 

@@ -12,6 +12,7 @@ public enum WhetherEnum {
      * 否
      */
     NO(0, "否", false);
+
     int code;
     String desc;
     boolean value;

@@ -24,6 +24,7 @@ public enum TimeFetchEnum {
      * 最近10分钟
      */
     LAST_10_MIN(5, "last10min");
+
     int code;
     String value;
 

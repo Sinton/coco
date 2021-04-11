@@ -28,6 +28,7 @@ public enum ContainerActionEnum {
      * 停杀
      */
     KILL(6);
+
     int action;
 
     ContainerActionEnum(int action) {

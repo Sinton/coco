@@ -12,6 +12,7 @@ public enum EndpointStatusEnum {
      * 活跃在线
      */
     UP(1);
+
     int code;
 
     EndpointStatusEnum(int code) {
