@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.DockerConstant;
 import com.github.coco.constant.dict.EndpointStatusEnum;
+import com.github.coco.entity.Stack;
 import com.github.coco.service.EndpointService;
 import com.github.coco.service.StackService;
 import com.github.coco.utils.DockerConnectorHelper;
@@ -50,7 +51,7 @@ public class SyncEndpointTask {
                 // 状态
                 int status = EndpointStatusEnum.DOWN.getCode();
                 try {
-                    if (dockerClient.ping().equals(DockerConstant.PING)) {
+                    if (dockerClient.ping().equals(DockerConstant.PING_OK)) {
                         status = EndpointStatusEnum.UP.getCode();
                         // docker配置
                         Map<String, Object> dockerConfig = new HashMap<>(16);
@@ -60,7 +61,9 @@ public class SyncEndpointTask {
                         } else {
                             dockerConfig.put("mode", "standalone");
                         }
-                        dockerConfig.put("stacks", stackService.getStacks(endpoint.getPublicIp()).size());
+                        dockerConfig.put("stacks", stackService.getStackTotal(Stack.builder()
+                                                                                   .endpoint(endpoint.getPublicIp())
+                                                                                   .build()));
                         Map<String, Object> imageConfig = new HashMap<>(4);
                         imageConfig.put("total", dockerClient.listImages().size());
                         imageConfig.put("size", dockerClient.listImages().stream().mapToLong(Image::size).sum());
