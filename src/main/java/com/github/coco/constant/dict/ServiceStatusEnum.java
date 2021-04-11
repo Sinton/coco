@@ -12,6 +12,7 @@ public enum ServiceStatusEnum {
      * 退出
      */
     EXIT(2);
+
     int status;
 
     ServiceStatusEnum(int status) {
