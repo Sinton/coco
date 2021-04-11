@@ -1,6 +1,5 @@
 FROM oraclejdk:8-jre-centos
 
-# author
 MAINTAINER Sinton<https://github.com/Sinton>
 
 WORKDIR /usr/local/coco
@@ -14,8 +13,8 @@ ENV COCO_VERSION=1.0.0 \
 
 RUN set -ex && \
     chmod a+x ./docker-entrypoint.sh && \
-    # install necessary tools
-    yum install -y unzip && \
+    # install necessary yum tools
+    yum install -y unzip libtool-ltdl && \
     yum clean all && \
     # download docker-compose
     DOCKER_COMPOSE_PROJECT_DOWNLOAD_URL="https://github.com/docker/compose/releases/download" && \
