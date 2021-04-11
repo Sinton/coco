@@ -3,12 +3,15 @@ package com.github.coco.interceptor;
 import com.alibaba.fastjson.JSON;
 import com.github.coco.cache.GlobalCache;
 import com.github.coco.constant.GlobalConstant;
+import com.github.coco.constant.dict.CacheTypeEnum;
 import com.github.coco.core.AppContext;
 import com.github.coco.dto.ApiResponseDTO;
 import com.github.coco.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -40,7 +43,7 @@ public class AuthenticateInterceptor implements HandlerInterceptor {
         // 判断token是否为空是否有效
         String token = request.getHeader(GlobalConstant.ACCESS_TOKEN);
         if (StringUtils.isNotBlank(token)) {
-            if (globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(token, User.class) != null) {
+            if (globalCache.getCache(CacheTypeEnum.TOKEN).get(token, User.class) != null) {
                 return true;
             } else {
                 printContent(response);
@@ -59,10 +62,10 @@ public class AuthenticateInterceptor implements HandlerInterceptor {
         String content = JSON.toJSONString(new ApiResponseDTO().returnResult(GlobalConstant.SUCCESS_CODE, "token过期,请重新登陆"));
         try {
             response.reset();
-            response.setContentType("application/json");
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setHeader("Cache-Control", "no-store");
             response.setCharacterEncoding("UTF-8");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             PrintWriter pw = response.getWriter();
             pw.write(content);
             pw.flush();

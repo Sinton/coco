@@ -5,6 +5,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
 import com.github.coco.cache.GlobalCache;
 import com.github.coco.constant.GlobalConstant;
+import com.github.coco.constant.dict.CacheTypeEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.entity.User;
 import com.github.coco.service.UserService;
@@ -68,7 +69,7 @@ public class UserController extends BaseController {
     @GetMapping(value = "/profile")
     public Map<String, Object> profile() throws IOException {
         String username = null;
-        User cacheUser = globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(RuntimeContextHelper.getToken(), User.class);
+        User cacheUser = globalCache.getCache(CacheTypeEnum.TOKEN).get(RuntimeContextHelper.getToken(), User.class);
         if (cacheUser != null) {
             username = cacheUser.getUsername();
         }

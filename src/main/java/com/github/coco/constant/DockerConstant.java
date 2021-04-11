@@ -7,7 +7,7 @@ public class DockerConstant {
     /**
      * 客户端ping结果
      */
-    public static final String PING                   = "OK";
+    public static final String PING_OK                = "OK";
 
     /**
      * 默认Endpoint在Unix下的连接URI

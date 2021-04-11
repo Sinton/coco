@@ -9,6 +9,7 @@ import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
 import com.github.coco.cache.GlobalCache;
 import com.github.coco.constant.GlobalConstant;
+import com.github.coco.constant.dict.CacheTypeEnum;
 import com.github.coco.handle.ExecSession;
 import com.github.coco.terminal.TerminalConnect;
 import com.github.coco.terminal.WebTerminalUser;
@@ -285,7 +286,7 @@ public class SocketEventHandle {
     private void clearInvalidSocketClient() {
         List<String> invalidTokens = new ArrayList<>();
         globalCache.getSocketClients().forEach((token, client) -> {
-            if (globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(token) == null) {
+            if (globalCache.getCache(CacheTypeEnum.TOKEN).get(token) == null) {
                 invalidTokens.add(token);
             }
         });

@@ -1,6 +1,7 @@
 package com.github.coco.cache;
 
 import com.corundumstudio.socketio.SocketIOClient;
+import com.github.coco.constant.dict.CacheTypeEnum;
 import com.github.coco.entity.Endpoint;
 import com.spotify.docker.client.DockerClient;
 import org.springframework.cache.Cache;
@@ -17,22 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class GlobalCache {
-    public enum CacheTypeEnum {
-        /**
-         * 鉴权令牌
-         */
-        TOKEN("TokenCache");
-        String name;
-
-        CacheTypeEnum(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
     @Resource
     private CacheManager cacheManager;
 

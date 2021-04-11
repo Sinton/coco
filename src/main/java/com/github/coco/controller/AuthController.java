@@ -3,7 +3,7 @@ package com.github.coco.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
-import com.github.coco.cache.GlobalCache;
+import com.github.coco.constant.dict.CacheTypeEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.entity.User;
 import com.github.coco.service.UserService;
@@ -39,7 +39,7 @@ public class AuthController extends BaseController {
             if (user != null) {
                 if (user.getPassword().equals(EncryptHelper.md5(password + user.getSalt()))) {
                     String token = UUID.randomUUID().toString();
-                    globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).put(token, user);
+                    globalCache.getCache(CacheTypeEnum.TOKEN).put(token, user);
                     result.putAll(JSON.parseObject(JSON.toJSONString(user), new TypeReference<Map<String, Object>>() {}));
                     result.put("deleted", "0");
                     result.put("roleId", "admin");
@@ -67,7 +67,7 @@ public class AuthController extends BaseController {
     @WebLog
     @PostMapping(value = "/smsCaptcha")
     public Map<String, Object> smsCaptcha() {
-        return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), "");
+        return apiResponseDTO.returnResult(ErrorCodeEnum.SUCCESS.getCode(), "123456");
     }
 
     @WebLog
