@@ -8,12 +8,16 @@ import com.github.coco.constant.dict.ContainerActionEnum;
 import com.github.coco.constant.dict.ContainerStatusEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.constant.dict.TimeFetchEnum;
+import com.github.coco.utils.DateHelper;
 import com.github.coco.utils.DockerFilterHelper;
 import com.github.coco.utils.DockerNetworkHelper;
 import com.github.coco.utils.EnumHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.Container;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -138,7 +142,7 @@ public class ContainerController extends BaseController {
                 containerConfigBuilder.cmd("sh", "-c", command);
             }
             if (StringUtils.isNotBlank(entrypoint)) {
-                containerConfigBuilder.entrypoint(entrypoint.split(GlobalConstant.SPACEMARK_COMMA));
+                containerConfigBuilder.entrypoint(entrypoint.split(GlobalConstant.SYMBOL_MARK_COMMA));
             }
             if (StringUtils.isNotBlank(workingDir)) {
                 containerConfigBuilder.workingDir(workingDir);
@@ -208,10 +212,27 @@ public class ContainerController extends BaseController {
         boolean withVolumes = Boolean.parseBoolean(params.getOrDefault("withVolumes", false).toString());
         if (containerId != null) {
             try {
-                boolean autoRemove = getDockerClient().inspectContainer(containerId).hostConfig().autoRemove();
-                if (!Objects.equals(getDockerClient().inspectContainer(containerId).state().status(),
-                                    ContainerStatusEnum.EXITED.getStatus())) {
-                    getDockerClient().killContainer(containerId);
+                boolean autoRemove = false;
+                if (getDockerClient().inspectContainer(containerId).hostConfig() != null) {
+                    autoRemove = Boolean.parseBoolean(Objects.toString(getDockerClient().inspectContainer(containerId).hostConfig().autoRemove(),
+                                                                       Boolean.FALSE.toString()));
+                }
+                ContainerStatusEnum status = EnumHelper.getEnumType(ContainerStatusEnum.class,
+                                                                    getDockerClient().inspectContainer(containerId).state().status(),
+                                                                    ContainerStatusEnum.EXITED,
+                                                                    "getStatus");
+                switch (status) {
+                    case RUNNING:
+                    case PAUSED:
+                    case RESTARTING:
+                        getDockerClient().killContainer(containerId);
+                        break;
+                    case CREATED:
+                    case EXITED:
+                        getDockerClient().stopContainer(containerId, DateHelper.SECOND);
+                    default:
+                        getDockerClient().stopContainer(containerId, DateHelper.SECOND);
+                        break;
                 }
                 if (!autoRemove) {
                     getDockerClient().removeContainer(containerId,
