@@ -1,6 +1,7 @@
 package com.github.coco.controller;
 
 import com.github.coco.cache.GlobalCache;
+import com.github.coco.constant.dict.CacheTypeEnum;
 import com.github.coco.dto.ApiResponseDTO;
 import com.github.coco.entity.Endpoint;
 import com.github.coco.entity.User;
@@ -20,6 +21,11 @@ public class BaseController {
 
     protected ApiResponseDTO apiResponseDTO = new ApiResponseDTO();
 
+    /**
+     * 从上下文中获取Docker客户端
+     *
+     * @return
+     */
     protected DockerClient getDockerClient() {
         String token = RuntimeContextHelper.getToken();
         return globalCache.getDockerClient(token);
@@ -30,6 +36,11 @@ public class BaseController {
         globalCache.putDockerClient(token, dockerClient);
     }
 
+    /**
+     * 从上下文中获取Docker服务终端
+     *
+     * @return
+     */
     protected Endpoint getEndpoint() {
         String token = RuntimeContextHelper.getToken();
         return globalCache.getEndpoint(token);
@@ -40,12 +51,30 @@ public class BaseController {
         globalCache.putEndpoint(token, endpoint);
     }
 
+    /**
+     * 从上下文中获取用户Token
+     * @return
+     */
     protected String getToken() {
         return RuntimeContextHelper.getToken();
     }
 
+    /**
+     * 从上下文中获取用户
+     *
+     * @return
+     */
+    protected User getUser() {
+        return globalCache.getCache(CacheTypeEnum.TOKEN).get(getToken(), User.class);
+    }
+
+    /**
+     * 从上下文中获取用户ID
+     *
+     * @return
+     */
     protected Integer getUserId() {
-        return globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).get(getToken(), User.class).getUid();
+        return getUser().getUid();
     }
 
     /**
@@ -53,7 +82,7 @@ public class BaseController {
      */
     protected void evictToken() {
         String token = RuntimeContextHelper.getToken();
-        globalCache.getCache(GlobalCache.CacheTypeEnum.TOKEN).evict(token);
+        globalCache.getCache(CacheTypeEnum.TOKEN).evict(token);
         globalCache.removeDockerClient(token);
         globalCache.removeSocketClient(token);
         globalCache.removeEndpoint(token);

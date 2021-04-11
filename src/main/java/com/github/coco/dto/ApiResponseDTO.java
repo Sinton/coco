@@ -24,7 +24,7 @@ public class ApiResponseDTO {
         result.put("totalCount", data.size());
         result.put("totalPage", data.size() / pageSize + 1);
         result.put("data", data.stream()
-                               .skip((pageNo - 1) * pageSize)
+                               .skip((long) (pageNo - 1) * pageSize)
                                .limit(pageSize)
                                .collect(Collectors.toList()));
         return result;
@@ -42,5 +42,10 @@ public class ApiResponseDTO {
         result.put("code", code);
         result.put("data", data);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString();
     }
 }
