@@ -27,7 +27,7 @@ public class ComposeCommandsBuilder {
          * @return
          */
         public Builder up(ComposeConfig composeConfig) {
-            if (composeConfig.getDaemon()) {
+            if (composeConfig.getDaemon() != null && composeConfig.getDaemon()) {
                 command.add("up -d");
             } else {
                 command.add("up");
@@ -41,7 +41,7 @@ public class ComposeCommandsBuilder {
          * @return
          */
         public Builder down(ComposeConfig composeConfig) {
-            if (composeConfig.getPruneVolume()) {
+            if (composeConfig.getPruneVolume() != null && composeConfig.getPruneVolume()) {
                 command.add("down -v");
             } else {
                 command.add("down");
@@ -105,7 +105,7 @@ public class ComposeCommandsBuilder {
             arguments.add("rm");
             arguments.add("-s");
             arguments.add("-f");
-            if (composeConfig.getPruneVolume()) {
+            if (composeConfig.getPruneVolume() != null && composeConfig.getPruneVolume()) {
                 arguments.add("-v");
             }
             if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
@@ -122,7 +122,9 @@ public class ComposeCommandsBuilder {
          * @return
          */
         public Builder run(ComposeConfig composeConfig) {
-            command.add(String.format("run %s %s", composeConfig.getServiceName(), composeConfig.getCommand()));
+            if (StringUtils.isNotBlank(composeConfig.getServiceName()) && StringUtils.isNotBlank(composeConfig.getCommand())) {
+                command.add(String.format("run %s %s", composeConfig.getServiceName(), composeConfig.getCommand()));
+            }
             return this;
         }
 
@@ -183,7 +185,7 @@ public class ComposeCommandsBuilder {
         public Builder logs(ComposeConfig composeConfig) {
             List<String> arguments = new LinkedList<>();
             arguments.add("logs");
-            if (composeConfig.getFollowLogs()) {
+            if (composeConfig.getFollowLogs() != null && composeConfig.getFollowLogs()) {
                 arguments.add("-f");
             }
             if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
