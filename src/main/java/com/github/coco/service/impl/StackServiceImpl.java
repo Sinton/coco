@@ -37,17 +37,12 @@ public class StackServiceImpl implements StackService {
     }
 
     @Override
-    public List<Stack> getStacks(String endpoint) {
-        return stackDAO.selectStacks(endpoint);
+    public List<Stack> getStacks(Stack stack, int pageNo, int pageSize) {
+        return stackDAO.selectStacks(stack, (pageNo - 1) * pageSize, pageSize);
     }
 
-    /*@Override
-    public List<Stack> getStacks(int pageNo, int pageSize) {
-        return stackDAO.selectStacks((pageNo - 1) * pageSize, pageSize);
-    }*/
-
     @Override
-    public int getStackTotal() {
-        return stackDAO.selectStackTotal();
+    public int getStackTotal(Stack stack) {
+        return stackDAO.selectStackTotal(stack);
     }
 }

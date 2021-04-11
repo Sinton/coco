@@ -5,10 +5,13 @@ package com.github.coco.constant.dict;
  */
 public enum StackTypeEnum {
     /**
-     * 运行中
+     * docker-compose应用栈
      */
-    SWARM(1),
-    COMPOSE(2);
+    COMPOSE(1),
+    /**
+     * swarm集群应用栈
+     */
+    SWARM(2);
 
     int code;
 

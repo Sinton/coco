@@ -31,7 +31,7 @@ public class SyncStackTask {
     @Resource
     private StackService stackService;
 
-    @Scheduled(fixedDelayString = "${coco.sync-data.stack-interval}")
+    @Scheduled(fixedDelayString = "${coco.sync-data.stack-interval:30000}")
     public void syncStacks() {
         List<String> swarmStacks = new ArrayList<>();
         List<String> composeStacks = new ArrayList<>();
@@ -41,7 +41,7 @@ public class SyncStackTask {
             DockerClient dockerClient = DockerConnectorHelper.borrowDockerClient(endpoint);
             if (dockerClient != null) {
                 try {
-                    if (dockerClient.ping().equals(DockerConstant.PING)) {
+                    if (dockerClient.ping().equals(DockerConstant.PING_OK)) {
                         // 通过容器的标签筛选docker-compose应用栈
                         dockerClient.listContainers(DockerClient.ListContainersParam.allContainers()).forEach(container -> {
                             if (container.labels() != null && !container.labels().isEmpty()) {
@@ -87,16 +87,22 @@ public class SyncStackTask {
                 }
             }
 
-            dbSwarmStacks.addAll(stackService.getStacks(endpoint.getPublicIp())
+            dbSwarmStacks.addAll(stackService.getStacks(Stack.builder()
+                                                             .endpoint(endpoint.getPublicIp())
+                                                             .type(StackTypeEnum.SWARM.getCode())
+                                                             .build(),
+                                                        DbConstant.PAGE_NO,
+                                                        DbConstant.MAX_PAGE_SIZE)
                                              .stream()
-                                             .filter(item -> item.getType().equals(StackTypeEnum.SWARM.getCode()) &&
-                                                             item.getEndpoint().equals(endpoint.getPublicIp()))
                                              .map(Stack::getName)
                                              .collect(Collectors.toList()));
-            dbComposeStacks.addAll(stackService.getStacks(endpoint.getPublicIp())
+            dbComposeStacks.addAll(stackService.getStacks(Stack.builder()
+                                                               .endpoint(endpoint.getPublicIp())
+                                                               .type(StackTypeEnum.COMPOSE.getCode())
+                                                               .build(),
+                                                          DbConstant.PAGE_NO,
+                                                          DbConstant.MAX_PAGE_SIZE)
                                                .stream()
-                                               .filter(item -> item.getType().equals(StackTypeEnum.COMPOSE.getCode()) &&
-                                                               item.getEndpoint().equals(endpoint.getPublicIp()))
                                                .map(Stack::getName)
                                                .collect(Collectors.toList()));
 

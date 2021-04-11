@@ -16,9 +16,7 @@ public interface StackService {
 
     Stack getStack(Stack stack);
 
-    List<Stack> getStacks(String endpoint);
+    List<Stack> getStacks(Stack stack, int pageNo, int pageSize);
 
-    /*List<Stack> getStacks(int pageNo, int pageSize);*/
-
-    int getStackTotal();
+    int getStackTotal(Stack stack);
 }

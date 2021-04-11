@@ -41,7 +41,9 @@ create table if not exists t_stack
     type         integer default 0,
     endpoint     text,
     swarm_id     text,
-    project_path text
+    project_path text,
+    owner        integer,
+    internal     integer default 0
 );
 
 create table if not exists t_user
