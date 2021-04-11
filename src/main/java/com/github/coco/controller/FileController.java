@@ -4,6 +4,7 @@ import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.ErrorConstant;
 import com.github.coco.constant.GlobalConstant;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,9 +32,9 @@ public class FileController extends BaseController {
                 return apiResponseDTO.returnResult(ErrorConstant.ERR_API_INVOKE, "上传失败，请选择文件");
             } else {
                 String uuid = UUID.randomUUID().toString();
-                IOUtils.copy(file.getInputStream(), new FileOutputStream(String.format("%s/%s.data",
-                                                                                       GlobalConstant.TEMP_STORAGE_PATH,
-                                                                                       uuid)));
+                String filename = String.format("%s/%s.data", GlobalConstant.TEMP_STORAGE_PATH, uuid);
+                FileUtils.touch(FileUtils.getFile(filename));
+                IOUtils.copy(file.getInputStream(), new FileOutputStream(filename));
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, uuid);
             }
         } catch (IOException e) {

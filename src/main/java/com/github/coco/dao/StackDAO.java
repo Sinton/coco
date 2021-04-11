@@ -40,7 +40,7 @@ public interface StackDAO extends BaseDAO {
     int updateStack(Stack stack);
 
     /**
-     * 查询应用栈
+     * 查询指定应用栈
      *
      * @param stack
      * @return
@@ -48,17 +48,23 @@ public interface StackDAO extends BaseDAO {
     @SelectProvider(type = StackSqlProvider.class, method = "selectStack")
     Stack selectStack(Stack stack);
 
-    @Select("SELECT * FROM t_stack WHERE endpoint = #{endpoint};")
-    List<Stack> selectStacks(@Param("endpoint") String endpoint);
-
-    /*@Select("SELECT * FROM t_endpoint LIMIT #{offset},#{limit}")
-    List<Stack> selectStacks(@Param("offset") int offset, @Param("limit") int limit);*/
+    /**
+     * 查询应用栈集合
+     *
+     * @param stack
+     * @param offset
+     * @param limit
+     * @return
+     */
+    @SelectProvider(type = StackSqlProvider.class, method = "selectStacks")
+    List<Stack> selectStacks(@Param("stack") Stack stack, @Param("offset") int offset, @Param("limit") int limit);
 
     /**
      * 查询Stack总数
      *
+     * @param stack
      * @return
      */
-    @Select("SELECT COUNT(*) AS total FROM t_stack")
-    int selectStackTotal();
+    @SelectProvider(type = StackSqlProvider.class, method = "selectStackTotal")
+    int selectStackTotal(Stack stack);
 }

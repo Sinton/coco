@@ -14,6 +14,7 @@ public class Stack {
     private Integer status;
     private Integer type;
     private String endpoint;
-    private String swarmId;
     private String projectPath;
+    private Integer owner;
+    private Integer internal;
 }
