@@ -3,10 +3,8 @@ package com.github.coco.interceptor;
 import com.alibaba.fastjson.JSON;
 import com.github.coco.cache.GlobalCache;
 import com.github.coco.constant.GlobalConstant;
-import com.github.coco.constant.dict.CacheTypeEnum;
 import com.github.coco.core.AppContext;
 import com.github.coco.dto.ApiResponseDTO;
-import com.github.coco.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
@@ -43,7 +41,7 @@ public class AuthenticateInterceptor implements HandlerInterceptor {
         // 判断token是否为空是否有效
         String token = request.getHeader(GlobalConstant.ACCESS_TOKEN);
         if (StringUtils.isNotBlank(token)) {
-            if (globalCache.getCache(CacheTypeEnum.TOKEN).get(token, User.class) != null) {
+            if (globalCache.getUser(token) != null) {
                 return true;
             } else {
                 printContent(response);

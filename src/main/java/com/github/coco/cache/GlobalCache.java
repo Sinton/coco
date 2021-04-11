@@ -3,6 +3,7 @@ package com.github.coco.cache;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.github.coco.constant.dict.CacheTypeEnum;
 import com.github.coco.entity.Endpoint;
+import com.github.coco.entity.User;
 import com.spotify.docker.client.DockerClient;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -72,6 +73,10 @@ public class GlobalCache {
 
     public void removeEndpoint(String token) {
         endpoints.remove(token);
+    }
+
+    public User getUser(String token) {
+        return tokenCache.get(token, User.class);
     }
 
     public Cache getCache(CacheTypeEnum cacheType) {

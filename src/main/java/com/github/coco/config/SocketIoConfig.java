@@ -5,8 +5,6 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.SpringAnnotationScanner;
 import com.github.coco.cache.GlobalCache;
 import com.github.coco.constant.GlobalConstant;
-import com.github.coco.constant.dict.CacheTypeEnum;
-import com.github.coco.entity.User;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -65,7 +63,7 @@ public class SocketIoConfig {
             if (data.getUrlParams().containsKey(GlobalConstant.ACCESS_TOKEN)) {
                 String token = data.getUrlParams().get(GlobalConstant.ACCESS_TOKEN).get(0);
                 if (StringUtils.isNotBlank(token)) {
-                     return globalCache.getCache(CacheTypeEnum.TOKEN).get(token, User.class) != null;
+                     return globalCache.getUser(token) != null;
                 } else {
                     return false;
                 }
