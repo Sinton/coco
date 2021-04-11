@@ -13,6 +13,22 @@ spring:
       max-request-size: -1
   cache:
     type: ehcache
+  datasource:
+    url: jdbc:sqlite:./Coco.db
+    username:
+    password:
+    driver-class-name: org.sqlite.JDBC
+    sql-script-encoding: UTF-8
+    continue-on-error: false
+    schema:
+      - classpath:sqls/0.0.1/schema.sql
+    data:
+      - classpath:sqls/0.0.1/data.sql
+    initialization-mode: always
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 15
+      idle-timeout: 60000
 
 server:
   compression:
