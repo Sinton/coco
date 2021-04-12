@@ -3,13 +3,13 @@ package com.github.coco.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
+import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.utils.DockerFilterHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.Volume;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,11 +67,11 @@ public class VolumeController extends BaseController {
     @WebLog
     @PostMapping(value = "/list")
     public Map<String, Object> getPageVolumes(@RequestBody Map<String, Object> params) {
-        int pageNo = Integer.parseInt(params.getOrDefault("pageNo", 1).toString());
-        int pageSize = Integer.parseInt(params.getOrDefault("pageSize", 10).toString());
-        String filter = Objects.toString(params.get(DockerFilterHelper.FILTER_KEY), null);
+        int pageNo = Integer.parseInt(Objects.toString(params.getOrDefault("pageNo", DbConstant.PAGE_NO)));
+        int pageSize = Integer.parseInt(Objects.toString(params.getOrDefault("pageSize", DbConstant.PAGE_SIZE)));
         List<DockerClient.ListVolumesParam> filters = new ArrayList<>();
-        if (StringUtils.isNotBlank(filter)) {
+        if (params.get(DockerFilterHelper.FILTER_KEY) != null) {
+            String filter = JSON.toJSONString(params.get(DockerFilterHelper.FILTER_KEY));
             filters = DockerFilterHelper.getVolumesFilter(filter);
         }
         try {
