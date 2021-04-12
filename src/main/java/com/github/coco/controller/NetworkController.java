@@ -113,11 +113,10 @@ public class NetworkController extends BaseController {
             filters = DockerFilterHelper.getNetworkFilter(filter);
         }
         try {
-            List<Network> networks = getDockerClient().listNetworks(DockerFilterHelper.toArray(filters,
-                                                                                               DockerClient.ListNetworksParam.class))
-                                                  .stream()
-                                                  .sorted((x, y) -> y.created().compareTo(x.created()))
-                                                  .collect(Collectors.toList());
+            List<Network> networks = getDockerClient().listNetworks(filters.toArray(new DockerClient.ListNetworksParam[]{}))
+                                                      .stream()
+                                                      .sorted((x, y) -> y.created().compareTo(x.created()))
+                                                      .collect(Collectors.toList());
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, networks));
         } catch (DockerException | InterruptedException e) {

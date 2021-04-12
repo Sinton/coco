@@ -338,8 +338,7 @@ public class ContainerController extends BaseController {
             filters = DockerFilterHelper.getContainerFilter(filter);
         }
         try {
-            List<Container> containers = getDockerClient().listContainers(DockerFilterHelper.toArray(filters,
-                                                                                                     DockerClient.ListContainersParam.class));
+            List<Container> containers = getDockerClient().listContainers(filters.toArray(new DockerClient.ListContainersParam[]{}));
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, containers));
         } catch (DockerException | InterruptedException e) {

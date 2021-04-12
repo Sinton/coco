@@ -156,8 +156,7 @@ public class ImageController extends BaseController {
             filters = DockerFilterHelper.getImageFilter(filter);
         }
         try {
-            List<Image> images = getDockerClient().listImages(DockerFilterHelper.toArray(filters,
-                                                                                         DockerClient.ListImagesParam.class));
+            List<Image> images = getDockerClient().listImages(filters.toArray(new DockerClient.ListImagesParam[]{}));
             String searchName = Objects.toString(params.get("searchName"), "");
             if (StringUtils.isNotBlank(searchName)) {
                 images = images.stream().filter(image -> {
