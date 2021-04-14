@@ -53,26 +53,6 @@ public class WebLogAspect {
         }
     }
 
-    @After("webLogPointCut()")
-    private void doAfter(JoinPoint joinPoint) {
-        // 接口结束后换行，方便分割查看
-        log.info("=========================================== End ===========================================");
-    }
-
-    @AfterReturning("webLogPointCut()")
-    private void doReturning(JoinPoint joinPoint) {
-    }
-
-    /**
-     * 拦截异常操作，有异常时执行
-     *
-     * @param joinPoint
-     * @param e
-     */
-    @AfterThrowing(value = "webLogPointCut()", throwing = "e")
-    private void doThrowing(JoinPoint joinPoint, Exception e) {
-    }
-
     /**
      * 环绕
      *
@@ -91,6 +71,26 @@ public class WebLogAspect {
         // 执行耗时
         log.info(String.format("Time-Consuming : %s ms", System.currentTimeMillis() - startTime));
         return result;
+    }
+
+    @After("webLogPointCut()")
+    private void doAfter(JoinPoint joinPoint) {
+        // 接口结束后换行，方便分割查看
+        log.info("=========================================== End ===========================================");
+    }
+
+    @AfterReturning("webLogPointCut()")
+    private void doReturning(JoinPoint joinPoint) {
+    }
+
+    /**
+     * 拦截异常操作，有异常时执行
+     *
+     * @param joinPoint
+     * @param e
+     */
+    @AfterThrowing(value = "webLogPointCut()", throwing = "e")
+    private void doThrowing(JoinPoint joinPoint, Exception e) {
     }
 
     /**
