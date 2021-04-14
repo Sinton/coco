@@ -41,7 +41,7 @@ public class DockerFilterHelper {
                     break;
                 case "label":
                     if (value instanceof Map) {
-                        filters.add(DockerClient.ListImagesParam.withLabel("", ""));
+                        ((Map<?, ?>) value).forEach((labelKey, labelValue) -> filters.add(DockerClient.ListImagesParam.withLabel(String.valueOf(labelKey), String.valueOf(labelValue))));
                     } else {
                         filters.add(DockerClient.ListImagesParam.withLabel(value.toString()));
                     }
@@ -175,7 +175,7 @@ public class DockerFilterHelper {
                     break;
                 case "laebl":
                     if (value instanceof Map) {
-                        filters.add(DockerClient.ListNetworksParam.withLabel("", ""));
+                        ((Map<?, ?>) value).forEach((labelKey, labelValue) -> filters.add(DockerClient.ListNetworksParam.withLabel(String.valueOf(labelKey), String.valueOf(labelValue))));
                     } else {
                         filters.add(DockerClient.ListNetworksParam.withLabel(value.toString()));
                     }
