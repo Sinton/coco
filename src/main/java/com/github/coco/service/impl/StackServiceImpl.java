@@ -1,6 +1,6 @@
 package com.github.coco.service.impl;
 
-import com.github.coco.dao.StackDAO;
+import com.github.coco.mapper.StackMapper;
 import com.github.coco.entity.Stack;
 import com.github.coco.service.StackService;
 import org.springframework.stereotype.Service;
@@ -14,16 +14,16 @@ import java.util.List;
 @Service
 public class StackServiceImpl implements StackService {
     @Resource
-    private StackDAO stackDAO;
+    private StackMapper stackMapper;
 
     @Override
     public int createStack(Stack stack) {
-        return stackDAO.insertStack(stack);
+        return stackMapper.insertStack(stack);
     }
 
     @Override
     public int removeStack(Stack stack) {
-        return stackDAO.deleteStack(stack);
+        return stackMapper.deleteStack(stack);
     }
 
     @Override
@@ -33,16 +33,16 @@ public class StackServiceImpl implements StackService {
 
     @Override
     public Stack getStack(Stack stack) {
-        return stackDAO.selectStack(stack);
+        return stackMapper.selectStack(stack);
     }
 
     @Override
     public List<Stack> getStacks(Stack stack, int pageNo, int pageSize) {
-        return stackDAO.selectStacks(stack, (pageNo - 1) * pageSize, pageSize);
+        return stackMapper.selectStacks(stack, (pageNo - 1) * pageSize, pageSize);
     }
 
     @Override
     public int getStackTotal(Stack stack) {
-        return stackDAO.selectStackTotal(stack);
+        return stackMapper.selectStackTotal(stack);
     }
 }

@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @EnableCaching
-@MapperScan("com.github.coco.dao")
+@MapperScan("com.github.coco.mapper")
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);

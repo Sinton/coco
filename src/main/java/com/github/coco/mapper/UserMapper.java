@@ -1,4 +1,4 @@
-package com.github.coco.dao;
+package com.github.coco.mapper;
 
 import com.github.coco.entity.User;
 import org.apache.ibatis.annotations.*;
@@ -9,7 +9,7 @@ import java.util.List;
  * @author Yan
  */
 @Mapper
-public interface UserDao extends BaseDAO {
+public interface UserMapper extends BaseMapper {
     /**
      * 添加用户
      *

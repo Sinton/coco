@@ -1,4 +1,4 @@
-package com.github.coco.dao;
+package com.github.coco.mapper;
 
 import com.github.coco.entity.Stack;
 import com.github.coco.provider.StackSqlProvider;
@@ -10,7 +10,7 @@ import java.util.List;
  * @author Yan
  */
 @Mapper
-public interface StackDAO extends BaseDAO {
+public interface StackMapper extends BaseMapper {
     /**
      * 添加应用栈
      *

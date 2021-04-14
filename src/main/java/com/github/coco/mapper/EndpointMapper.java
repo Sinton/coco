@@ -1,4 +1,4 @@
-package com.github.coco.dao;
+package com.github.coco.mapper;
 
 import com.github.coco.entity.Endpoint;
 import com.github.coco.provider.EndpointSqlProvider;
@@ -10,7 +10,7 @@ import java.util.List;
  * @author Yan
  */
 @Mapper
-public interface EndpointDAO extends BaseDAO {
+public interface EndpointMapper extends BaseMapper {
     /**
      * 添加Endpoint
      *
