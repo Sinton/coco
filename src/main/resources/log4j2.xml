@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration status="WARN" packages="org.apache.logging.log4j.core.pattern">
+    <properties>
+        <!-- 文件输出格式 -->
+        <property name="PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} |-%-5level [%thread] %c [%L] -| %msg%n</property>
+    </properties>
+    <appenders>
+        <Console name="ConsoleLog" target="system_out">
+            <PatternLayout pattern="${PATTERN}"/>
+        </Console>
+
+        <RollingFile name="AppLog" fileName="logs/AppLog.log" filePattern="logs/AppLog-$${date:yyyy-MM}/AppLog-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="250 MB"/>
+            </Policies>
+        </RollingFile>
+
+        <RollingFile name="SqlLog" fileName="logs/SqlLog.log" filePattern="logs/SqlLog-$${date:yyyy-MM}/SqlLog-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="250 MB"/>
+            </Policies>
+        </RollingFile>
+
+        <Async name="AsyncConsoleLog">
+            <AppenderRef ref="ConsoleLog"/>
+        </Async>
+
+        <Async name="AsyncAppLog">
+            <AppenderRef ref="AppLog"/>
+        </Async>
+
+        <Async name="AsyncSqlLog">
+            <AppenderRef ref="SqlLog"/>
+        </Async>
+    </appenders>
+
+    <loggers>
+        <AsyncLogger name="com.github.coco" level="info" additivity="false">
+            <AppenderRef ref="AsyncAppLog"/>
+            <AppenderRef ref="AsyncConsoleLog"/>
+        </AsyncLogger>
+
+        <AsyncLogger name="com.github.coco.mapper" level="debug" additivity="false">
+            <AppenderRef ref="AsyncSqlLog"/>
+        </AsyncLogger>
+
+        <root level="info">
+            <AppenderRef ref="AsyncConsoleLog"/>
+        </root>
+    </loggers>
+</configuration>

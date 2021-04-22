@@ -11,6 +11,7 @@ import com.github.coco.utils.ListHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
+@ConditionalOnExpression("${coco.sync-data.stack.enable}")
 public class SyncStackTask {
     @Resource
     private EndpointService endpointService;
@@ -31,7 +33,7 @@ public class SyncStackTask {
     @Resource
     private StackService stackService;
 
-    @Scheduled(fixedDelayString = "${coco.sync-data.stack-interval:30000}")
+    @Scheduled(fixedDelayString = "${coco.sync-data.stack.stack-interval:30000}")
     public void syncStacks() {
         List<String> swarmStacks = new ArrayList<>();
         List<String> composeStacks = new ArrayList<>();

@@ -22,8 +22,8 @@ spring:
     continue-on-error: false
     schema:
       - classpath:sqls/0.0.1/schema.sql
-    data:
-      - classpath:sqls/0.0.1/data.sql
+#    data:
+#      - classpath:sqls/0.0.1/data.sql
     initialization-mode: always
     hikari:
       minimum-idle: 10
@@ -47,8 +47,8 @@ mybatis:
   configuration:
     use-generated-keys: true
     map-underscore-to-camel-case: true
-    log-prefix: "STDOUT_LOGGING"
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.log4j2.Log4j2Impl
+  type-aliases-package: com.github.coco.entity
 
 #============================================================================
 # Netty Socket-IO
@@ -73,7 +73,11 @@ socketio:
 
 coco:
   sync-data:
-    # 应用栈数据同步时间间隔（默认30秒）
-    stack-interval: 30000
-    # 服务终端数据同步时间间隔（默认30秒）
-    endpoint-interval: 30000
+    stack:
+      enable: true
+      # 应用栈数据同步时间间隔（默认30秒）
+      stack-interval: 30000
+    endpoint:
+      enable: true
+      # 服务终端数据同步时间间隔（默认30秒）
+      endpoint-interval: 30000
