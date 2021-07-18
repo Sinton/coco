@@ -20,7 +20,7 @@ public class DockerFilterHelper {
      * @return
      */
     public static List<DockerClient.ListImagesParam> getImageFilter(String filter) {
-        return getImageFilter(StringHelper.stringConvertMap(filter));
+        return getImageFilter(JsonHelper.jsonStringConvertMap(filter));
     }
 
     public static List<DockerClient.ListImagesParam> getImageFilter(Map<String, Object> filter) {
@@ -61,7 +61,7 @@ public class DockerFilterHelper {
      * @return
      */
     public static List<DockerClient.ListContainersParam> getContainerFilter(String filter) {
-        return getContainerFilter(StringHelper.stringConvertMap(filter));
+        return getContainerFilter(JsonHelper.jsonStringConvertMap(filter));
     }
 
     public static List<DockerClient.ListContainersParam> getContainerFilter(Map<String, Object> filter) {
@@ -120,7 +120,7 @@ public class DockerFilterHelper {
      * @return
      */
     public static List<DockerClient.ListVolumesParam> getVolumesFilter(String filter) {
-        return getVolumesFilter(StringHelper.stringConvertMap(filter));
+        return getVolumesFilter(JsonHelper.jsonStringConvertMap(filter));
     }
 
     public static List<DockerClient.ListVolumesParam> getVolumesFilter(Map<String, Object> filter) {
@@ -151,7 +151,7 @@ public class DockerFilterHelper {
      * @return
      */
     public static List<DockerClient.ListNetworksParam> getNetworkFilter(String filter) {
-        return getNetworkFilter(StringHelper.stringConvertMap(filter));
+        return getNetworkFilter(JsonHelper.jsonStringConvertMap(filter));
     }
 
     public static List<DockerClient.ListNetworksParam> getNetworkFilter(Map<String, Object> filter) {

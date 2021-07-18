@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
+import com.github.coco.utils.JsonHelper;
 import com.github.coco.utils.StringHelper;
 import com.spotify.docker.client.messages.swarm.Node;
 import com.spotify.docker.client.messages.swarm.NodeSpec;
@@ -49,7 +50,7 @@ public class NodeController extends BaseController {
         String role                = Objects.toString(params.get("role"), "");
         String availability        = Objects.toString(params.get("availability"), "");
         Long version               = Long.parseLong(Objects.toString(params.get("version"), "0"));
-        Map<String, String> labels = StringHelper.stringConvertMap(JSON.toJSONString(params.getOrDefault("labels", null)));
+        Map<String, String> labels = JsonHelper.jsonStringConvertMap(JSON.toJSONString(params.getOrDefault("labels", null)));
         try {
             NodeSpec.Builder nodeSpecBuilder = NodeSpec.builder();
             if (StringUtils.isNotBlank(availability)) {
