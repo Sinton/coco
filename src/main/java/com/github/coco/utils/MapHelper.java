@@ -1,5 +1,7 @@
 package com.github.coco.utils;
 
+import com.alibaba.fastjson.JSON;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -100,5 +102,20 @@ public class MapHelper {
         Map<K, V> out = new HashMap<>(16);
         args.forEach(item -> out.put(item, in.get(item)));
         return out;
+    }
+
+    /**
+     * Map集合转Java对象
+     *
+     * @param source
+     * @param clazz
+     * @param <K>
+     * @param <V>
+     * @param <T>
+     * @return
+     */
+    public static <K, V, T> T mapConvertObject(Map<K, V> source, Class<T> clazz) {
+        String resource = JSON.toJSONString(source);
+        return JsonHelper.jsonStringConvertObject(resource, clazz);
     }
 }
