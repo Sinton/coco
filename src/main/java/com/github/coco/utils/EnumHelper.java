@@ -1,10 +1,13 @@
 package com.github.coco.utils;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.reflect.Method;
 
 /**
  * @author Yan
  */
+@Slf4j
 public class EnumHelper {
     private static final String MATCH_METHOD  = "getCode";
     private static final String VALUES_METHOD = "values";
@@ -45,7 +48,7 @@ public class EnumHelper {
                 }
             }
         } catch (Exception e) {
-            LoggerHelper.fmtError(EnumHelper.class, "获取枚举项时失败");
+            log.error("获取枚举项时失败", e);
             return defaultEnum;
         }
         return defaultEnum;
@@ -63,7 +66,7 @@ public class EnumHelper {
             Method method = enumClass.getMethod(VALUES_METHOD);
             enums         = (Enum<?>[]) method.invoke(enumClass);
         } catch (Exception e) {
-            LoggerHelper.fmtError(EnumHelper.class, "获取%s枚举项失败", enumClass.getName());
+            log.error(String.format("获取%s枚举项失败", enumClass.getName()), e);
             return null;
         }
         return enums;
