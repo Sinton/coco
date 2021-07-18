@@ -5,11 +5,13 @@ import com.alibaba.fastjson.TypeReference;
 import com.github.coco.annotation.WebLog;
 import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.ErrorCodeEnum;
-import com.github.coco.utils.DockerBuilderHelper;
-import com.github.coco.utils.LoggerHelper;
-import com.github.coco.utils.StringHelper;
+import com.github.coco.constant.dict.SwarmSchedulingModeEnum;
+import com.github.coco.dto.CreateServiceDTO;
+import com.github.coco.utils.*;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.swarm.*;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,21 +27,99 @@ import static com.github.coco.utils.DockerBuilderHelper.*;
 /**
  * @author Yan
  */
+@Slf4j
 @RestController
 @RequestMapping(value = "/api/service")
 public class ServiceController extends BaseController {
-
     @WebLog
     @PostMapping(value = "/create")
     public Map<String, Object> createService(@RequestBody Map<String, Object> params) {
-        String serviceName = params.getOrDefault("serviceName", null).toString();
-        try {
-            ServiceSpec serviceSpec = ServiceSpec.builder().name(serviceName).build();
-            return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
-                                               getDockerClient().createService(serviceSpec));
-        } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "创建服务失败");
-            return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
+        CreateServiceDTO createServiceDTO = MapHelper.mapConvertObject(params, CreateServiceDTO.class);
+        if (StringUtils.isNotBlank(createServiceDTO.getName()) || StringUtils.isNotBlank(createServiceDTO.getImage())) {
+            try {
+                ServiceSpec.Builder serviceSpecBuilder = ServiceSpec.builder();
+                // 指定服务名称
+                serviceSpecBuilder.name(createServiceDTO.getName());
+                // 指定编排调度方式
+                switch (EnumHelper.getEnumType(SwarmSchedulingModeEnum.class, createServiceDTO.getSchedulingMode().toString())) {
+                    case GLOBAL:
+                        serviceSpecBuilder.mode(ServiceMode.withGlobal());
+                        break;
+                    case REPLICATED:
+                        serviceSpecBuilder.mode(ServiceMode.withReplicas(createServiceDTO.getReplicas()));
+                        break;
+                    default:
+                        break;
+                }
+                // 指定服务标签
+                if (createServiceDTO.getServiceLabels() != null && !createServiceDTO.getServiceLabels().isEmpty()) {
+                    serviceSpecBuilder.labels(createServiceDTO.getServiceLabels());
+                }
+                // 指定服务端口
+                if (createServiceDTO.getPorts() != null && !createServiceDTO.getPorts().isEmpty()) {
+                    EndpointSpec.Builder endpointSpecBuilder = EndpointSpec.builder();
+                    endpointSpecBuilder.ports(DockerServiceHelper.generatePortConfig(createServiceDTO.getPorts()));
+                    serviceSpecBuilder.endpointSpec(endpointSpecBuilder.build());
+                }
+                // 指定服务网络
+                if (createServiceDTO.getNetworkingConfigs() != null && !createServiceDTO.getNetworkingConfigs().isEmpty()) {
+                    serviceSpecBuilder.networks(DockerNetworkHelper.generateNetworkAttachmentConfig(createServiceDTO.getNetworkingConfigs()));
+                }
+                // 指定服务更新配置策略
+                if (createServiceDTO.getUpdateConfigPolicy() != null && !createServiceDTO.getUpdateConfigPolicy().isEmpty()) {
+                    serviceSpecBuilder.updateConfig(DockerServiceHelper.generateUpdateConfig(createServiceDTO.getUpdateConfigPolicy()));
+                }
+
+                ContainerSpec.Builder containerSpecBuilder = ContainerSpec.builder();
+                // 指定容器镜像
+                containerSpecBuilder.image(createServiceDTO.getImage());
+                // 指定容器执行命令
+                if (StringUtils.isNotBlank(createServiceDTO.getCommand())) {
+                    containerSpecBuilder.command(createServiceDTO.getCommand());
+                }
+                // 指定容器交互方式
+                if (createServiceDTO.getTty() != null) {
+                    containerSpecBuilder.tty(createServiceDTO.getTty());
+                }
+                // 指定容器用户
+                if (createServiceDTO.getUser() != null && StringUtils.isNotBlank(createServiceDTO.getUser())) {
+                    containerSpecBuilder.user(createServiceDTO.getUser());
+                }
+                // 指定容器工作空间
+                if (StringUtils.isNotBlank(createServiceDTO.getWorkingDir())) {
+                    containerSpecBuilder.dir(createServiceDTO.getWorkingDir());
+                }
+                // 指定容器标签
+                if (createServiceDTO.getContainerLabels() != null && !createServiceDTO.getContainerLabels().isEmpty()) {
+                    containerSpecBuilder.labels(createServiceDTO.getContainerLabels());
+                }
+                // 指定容器存储卷挂载
+                if (createServiceDTO.getVolumes() != null && !createServiceDTO.getVolumes().isEmpty()) {
+                    containerSpecBuilder.mounts(DockerContainerHelper.generateMount(createServiceDTO.getVolumes()));
+                }
+                // 指定容器配置项
+                if (createServiceDTO.getConfigs() != null && !createServiceDTO.getConfigs().isEmpty()) {
+                    containerSpecBuilder.configs(DockerContainerHelper.generateConfig(createServiceDTO.getConfigs()));
+                }
+                // 指定容器秘密配置项
+                if (createServiceDTO.getSecrets() != null && !createServiceDTO.getSecrets().isEmpty()) {
+                    containerSpecBuilder.secrets(DockerContainerHelper.generateSecret(createServiceDTO.getSecrets()));
+                }
+
+                TaskSpec.Builder taskSpecBuilder = TaskSpec.builder();
+                RestartPolicy restartPolicy = createServiceDTO.getRestartPolicy();
+                taskSpecBuilder.containerSpec(containerSpecBuilder.build());
+                taskSpecBuilder.restartPolicy(restartPolicy);
+                // 指定服务编排任务
+                serviceSpecBuilder.taskTemplate(taskSpecBuilder.build());
+                return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
+                                                   getDockerClient().createService(serviceSpecBuilder.build()));
+            } catch (Exception e) {
+                log.error("创建服务失败", e);
+                return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
+            }
+        } else {
+            return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), "服务名不能为空");
         }
     }
 
@@ -51,7 +131,7 @@ public class ServiceController extends BaseController {
             getDockerClient().removeService(serviceId);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "删除服务失败");
+            log.error("删除服务失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -65,7 +145,7 @@ public class ServiceController extends BaseController {
             getDockerClient().updateService(serviceId, service.version().index(), service.spec());
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            log.error("更新服务失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -96,7 +176,7 @@ public class ServiceController extends BaseController {
             getDockerClient().updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新编排任务调度成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新编排任务调度失败");
+            log.error("更新编排任务调度失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -118,7 +198,7 @@ public class ServiceController extends BaseController {
             getDockerClient().updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            log.error("更新服务失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -127,7 +207,7 @@ public class ServiceController extends BaseController {
     @PostMapping(value = "/label")
     public Map<String, Object> updateLabel(@RequestBody Map<String, Object> params) {
         String serviceId = params.getOrDefault("serviceId", null).toString();
-        Map<String, String> labels = StringHelper.stringConvertMap(params.getOrDefault("serviceLabels", "").toString());
+        Map<String, String> labels = JsonHelper.jsonStringConvertMap(params.getOrDefault("serviceLabels", "").toString());
         try {
             Service service = getDockerClient().inspectService(serviceId);
             ServiceSpec serviceSpec = DockerBuilderHelper.serviceSpecBuilder(service.spec(),
@@ -136,7 +216,7 @@ public class ServiceController extends BaseController {
             getDockerClient().updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新标签失败");
+            log.error("更新标签失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -160,7 +240,7 @@ public class ServiceController extends BaseController {
             getDockerClient().updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            log.error("更新服务失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -184,7 +264,7 @@ public class ServiceController extends BaseController {
             getDockerClient().updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            log.error("更新服务失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -209,7 +289,7 @@ public class ServiceController extends BaseController {
             getDockerClient().updateService(serviceId, getDockerClient().inspectService(serviceId).version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            log.error("更新服务失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -235,7 +315,7 @@ public class ServiceController extends BaseController {
             getDockerClient().updateService(serviceId, service.version().index(), serviceSpec);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "更新服务成功");
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "更新服务失败");
+            log.error("更新服务失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -253,7 +333,7 @@ public class ServiceController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                apiResponseDTO.tableResult(pageNo, pageSize, services));
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取服务列表失败");
+            log.error("获取服务列表失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -266,7 +346,7 @@ public class ServiceController extends BaseController {
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE,
                                                getDockerClient().inspectService(serviceId));
         } catch (Exception e) {
-            LoggerHelper.fmtError(getClass(), e, "获取服务信息失败");
+            log.error("获取服务信息失败", e);
             return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
         }
     }
@@ -290,7 +370,7 @@ public class ServiceController extends BaseController {
                                    .readFully();
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, logs);
             } catch (Exception e) {
-                LoggerHelper.fmtError(getClass(), e, "获取服务日志失败");
+                log.error("获取服务日志失败", e);
                 return apiResponseDTO.returnResult(ErrorCodeEnum.EXCEPTION.getCode(), e);
             }
         } else {
