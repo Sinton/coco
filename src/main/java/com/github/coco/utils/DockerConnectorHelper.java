@@ -15,6 +15,19 @@ public class DockerConnectorHelper {
     private static GenericKeyedObjectPool<Integer, DockerClient> dockerClientPool;
 
     /**
+     * 清理Docker客户端连接池
+     *
+     * @param endpoint
+     */
+    public static void clenrDockerClient(Endpoint endpoint) {
+        try {
+            dockerClientPool.clear(endpoint.getId());
+        } catch (Exception e) {
+            log.error(String.format("清理%s服务终端的Docker连接对象失败", endpoint.getId()), e);
+        }
+    }
+
+    /**
      * 租借Docker客户端连接池
      *
      * @param endpoint

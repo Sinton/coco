@@ -6,12 +6,14 @@ import com.github.coco.constant.DbConstant;
 import com.github.coco.constant.DockerConstant;
 import com.github.coco.constant.ErrorConstant;
 import com.github.coco.constant.GlobalConstant;
+import com.github.coco.constant.dict.EndpointStatusEnum;
 import com.github.coco.constant.dict.EndpointTypeEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.entity.Endpoint;
 import com.github.coco.schedule.SyncEndpointTask;
 import com.github.coco.service.EndpointService;
 import com.github.coco.utils.DockerConnectorHelper;
+import com.github.coco.utils.RuntimeContextHelper;
 import com.github.coco.utils.ThreadPoolHelper;
 import com.spotify.docker.client.DockerClient;
 import lombok.extern.slf4j.Slf4j;
@@ -81,6 +83,9 @@ public class EndpointController extends BaseController {
     public Map<String, Object> removeEndpoint(@RequestBody Map<String, Object> params) {
         Integer id = (Integer) params.get("id");
         try {
+            Endpoint endpoint = endpointService.getEndpoint(Endpoint.builder().id(id).build());
+            DockerClient dockerClient = getDockerClient();
+            DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
             endpointService.removeEndpoint(id);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "删除服务终端成功");
         } catch (Exception e) {
@@ -97,15 +102,23 @@ public class EndpointController extends BaseController {
             Endpoint dbEndpoint = endpointService.getEndpoint(Endpoint.builder().id(endpoint.getId()).build());
             boolean changedEndpointUrl = !dbEndpoint.getEndpointUrl().equals(endpoint.getEndpointUrl());
             if (changedEndpointUrl) {
-                // 切换释放对象连接池中服务终端对应的DockerClient
+                // 归还旧Docker连接对象并在上下文中将其移除
                 DockerClient dockerClient = getDockerClient();
-                setDockerClient(DockerConnectorHelper.borrowDockerClient(endpoint));
-                DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
+                if (dockerClient != null) {
+                    globalCache.removeDockerClient(RuntimeContextHelper.getToken());
+                    DockerConnectorHelper.returnDockerClient(dbEndpoint, dockerClient);
+                }
+                DockerConnectorHelper.clenrDockerClient(endpoint);
+                // 移除上下文中的终端对象
+                Endpoint contextEndpoint = getEndpoint();
+                if (contextEndpoint != null && contextEndpoint.getId().equals(endpoint.getId())) {
+                    globalCache.removeEndpoint(RuntimeContextHelper.getToken());
+                }
             }
             BeanUtils.copyProperties(endpoint, dbEndpoint, Endpoint.class);
             dbEndpoint.setUpdateDateTime(System.currentTimeMillis());
+            dbEndpoint.setStatus(EndpointStatusEnum.DOWN.getCode());
             endpointService.modifyEndpoint(dbEndpoint);
-            setEndpoint(dbEndpoint);
             return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "修改服务终端成功");
         } catch (Exception e) {
             log.error("修改服务终端失败", e);
@@ -131,10 +144,16 @@ public class EndpointController extends BaseController {
         if (StringUtils.isNotBlank(id)) {
             Endpoint endpoint = endpointService.getEndpoint(Endpoint.builder().id(Integer.parseInt(id)).build());
             if (endpoint != null) {
+                // 回收旧的DockerClient连接池
+                DockerClient dockerClient = getDockerClient();
+                if (dockerClient != null) {
+                    DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
+                } else {
+                    setDockerClient(DockerConnectorHelper.borrowDockerClient(endpoint));
+                }
                 setEndpoint(endpoint);
-                setDockerClient(DockerConnectorHelper.borrowDockerClient(endpoint));
             } else {
-                log.info("找不到该服务终端，无法切换服务终端");
+                log.error(String.format("找不到该ID为【%s】的服务终端，无法切换服务终端", id));
             }
         }
         return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, "切换服务终端成功");
