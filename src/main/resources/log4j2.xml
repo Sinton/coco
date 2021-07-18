@@ -9,6 +9,14 @@
             <PatternLayout pattern="${PATTERN}"/>
         </Console>
 
+        <RollingFile name="DockerClientLog" fileName="logs/DockerClientLog.log" filePattern="logs/DockerClientLog-$${date:yyyy-MM}/DockerClientLog-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="250 MB"/>
+            </Policies>
+        </RollingFile>
+
         <RollingFile name="AppLog" fileName="logs/AppLog.log" filePattern="logs/AppLog-$${date:yyyy-MM}/AppLog-%d{MM-dd-yyyy}-%i.log.gz">
             <PatternLayout pattern="${PATTERN}"/>
             <Policies>
@@ -29,6 +37,10 @@
             <AppenderRef ref="ConsoleLog"/>
         </Async>
 
+        <Async name="AsyncDockerClientLog">
+            <AppenderRef ref="DockerClientLog"/>
+        </Async>
+
         <Async name="AsyncAppLog">
             <AppenderRef ref="AppLog"/>
         </Async>
@@ -39,6 +51,10 @@
     </appenders>
 
     <loggers>
+        <AsyncLogger name="com.spotify.docker.client" level="debug" additivity="false">
+            <AppenderRef ref="AsyncDockerClientLog"/>
+        </AsyncLogger>
+
         <AsyncLogger name="com.github.coco" level="info" additivity="false">
             <AppenderRef ref="AsyncAppLog"/>
             <AppenderRef ref="AsyncConsoleLog"/>
