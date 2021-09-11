@@ -1,4 +1,4 @@
-package com.github.coco.utils;
+package com.github.coco.utils.docker;
 
 import com.github.coco.constant.DockerConstant;
 import com.spotify.docker.client.DockerClient;

@@ -1,5 +1,6 @@
-package com.github.coco.utils;
+package com.github.coco.utils.docker;
 
+import com.github.coco.utils.EnumHelper;
 import com.spotify.docker.client.messages.swarm.PortConfig;
 import com.spotify.docker.client.messages.swarm.UpdateConfig;
 

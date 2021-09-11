@@ -1,4 +1,4 @@
-package com.github.coco.utils;
+package com.github.coco.utils.docker;
 
 import com.spotify.docker.client.messages.mount.Mount;
 import com.spotify.docker.client.messages.swarm.ConfigBind;

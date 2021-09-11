@@ -12,7 +12,7 @@ import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.entity.Endpoint;
 import com.github.coco.schedule.SyncEndpointTask;
 import com.github.coco.service.EndpointService;
-import com.github.coco.utils.DockerConnectorHelper;
+import com.github.coco.utils.docker.DockerConnectorHelper;
 import com.github.coco.utils.RuntimeContextHelper;
 import com.github.coco.utils.ThreadPoolHelper;
 import com.spotify.docker.client.DockerClient;

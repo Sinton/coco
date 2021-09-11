@@ -6,7 +6,7 @@ import com.github.coco.constant.dict.StackTypeEnum;
 import com.github.coco.entity.Stack;
 import com.github.coco.service.EndpointService;
 import com.github.coco.service.StackService;
-import com.github.coco.utils.DockerConnectorHelper;
+import com.github.coco.utils.docker.DockerConnectorHelper;
 import com.github.coco.utils.ListHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;

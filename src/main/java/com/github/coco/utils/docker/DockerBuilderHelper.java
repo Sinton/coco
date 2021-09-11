@@ -1,4 +1,4 @@
-package com.github.coco.utils;
+package com.github.coco.utils.docker;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
