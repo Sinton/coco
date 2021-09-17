@@ -67,8 +67,8 @@ public class DockerConnectorHelper {
         if (dockerClientPool == null) {
             // 连接池配置
             GenericKeyedObjectPoolConfig<DockerClient> poolConfig = new GenericKeyedObjectPoolConfig<>();
-            poolConfig.setMaxWaitMillis(DateHelper.SECOND * 10);
-            poolConfig.setMinEvictableIdleTimeMillis(DateHelper.MINUTE);
+            poolConfig.setMaxWaitMillis(10L * DateHelper.SECOND / DateHelper.MILLISECOND);
+            poolConfig.setMinEvictableIdleTimeMillis(DateHelper.MINUTE / DateHelper.MILLISECOND);
             dockerClientPool = new GenericKeyedObjectPool<>(new DockerConnectorFactory(), poolConfig);
         }
         return dockerClientPool;
