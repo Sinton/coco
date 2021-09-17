@@ -142,16 +142,16 @@ public class EndpointController extends BaseController {
     public Map<String, Object> switchEndpoint(@RequestBody Map<String, Object> params) {
         String id = Objects.toString(params.get("id"), "");
         if (StringUtils.isNotBlank(id)) {
-            Endpoint endpoint = endpointService.getEndpoint(Endpoint.builder().id(Integer.parseInt(id)).build());
-            if (endpoint != null) {
+            Endpoint targetEndpoint = endpointService.getEndpoint(Endpoint.builder().id(Integer.parseInt(id)).build());
+            if (targetEndpoint != null) {
+                DockerClient currDockerClient = getDockerClient();
+                Endpoint currEndpoint = getEndpoint();
                 // 回收旧的DockerClient连接池
-                DockerClient dockerClient = getDockerClient();
-                if (dockerClient != null) {
-                    DockerConnectorHelper.returnDockerClient(endpoint, dockerClient);
-                } else {
-                    setDockerClient(DockerConnectorHelper.borrowDockerClient(endpoint));
+                if (currDockerClient != null) {
+                    DockerConnectorHelper.returnDockerClient(currEndpoint, currDockerClient);
                 }
-                setEndpoint(endpoint);
+                setDockerClient(DockerConnectorHelper.borrowDockerClient(targetEndpoint));
+                setEndpoint(targetEndpoint);
             } else {
                 log.error(String.format("找不到该ID为【%s】的服务终端，无法切换服务终端", id));
             }
