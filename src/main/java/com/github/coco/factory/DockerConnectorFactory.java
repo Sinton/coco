@@ -56,8 +56,8 @@ public class DockerConnectorFactory extends BaseKeyedPooledObjectFactory<Integer
         } catch (DockerCertificateException e) {
             return null;
         }
-        return builder.connectTimeoutMillis(DateHelper.SECOND * 10)
-                      .readTimeoutMillis(DateHelper.SECOND * 10)
+        return builder.connectTimeoutMillis(3L * DateHelper.SECOND / DateHelper.MILLISECOND)
+                      .readTimeoutMillis(3L * DateHelper.SECOND / DateHelper.MILLISECOND)
                       .build();
     }
 

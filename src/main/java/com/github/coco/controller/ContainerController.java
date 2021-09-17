@@ -229,9 +229,9 @@ public class ContainerController extends BaseController {
                         break;
                     case CREATED:
                     case EXITED:
-                        getDockerClient().stopContainer(containerId, DateHelper.SECOND);
+                        getDockerClient().stopContainer(containerId, 1);
                     default:
-                        getDockerClient().stopContainer(containerId, DateHelper.SECOND);
+                        getDockerClient().stopContainer(containerId, 1);
                         break;
                 }
                 if (!autoRemove) {
