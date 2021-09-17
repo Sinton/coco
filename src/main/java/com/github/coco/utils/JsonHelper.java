@@ -3,6 +3,7 @@ package com.github.coco.utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,6 +18,17 @@ public class JsonHelper {
      */
     public static <K, V> Map<K, V> jsonStringConvertMap(String resource) {
         return JSON.parseObject(resource, new TypeReference<Map<K, V>>() {});
+    }
+
+    /**
+     * JSON字符串转List集合
+     *
+     * @param resource
+     * @param <T>
+     * @return
+     */
+    public static <T> List<T> jsonStringConvertList(String resource) {
+        return JSON.parseObject(resource, new TypeReference<List<T>>() {});
     }
 
     /**
