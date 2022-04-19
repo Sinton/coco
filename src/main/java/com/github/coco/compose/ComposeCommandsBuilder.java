@@ -1,5 +1,6 @@
 package com.github.coco.compose;
 
+import com.github.coco.constant.GlobalConstant;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -111,7 +112,7 @@ public class ComposeCommandsBuilder {
             if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
                 arguments.add(composeConfig.getServiceName());
             }
-            command.add(String.join(" ", arguments));
+            command.add(String.join(GlobalConstant.SYMBOL_SPACE, arguments));
             return this;
         }
 
@@ -191,12 +192,12 @@ public class ComposeCommandsBuilder {
             if (StringUtils.isNotBlank(composeConfig.getServiceName())) {
                 arguments.add(composeConfig.getServiceName());
             }
-            command.add(String.join(" ", arguments));
+            command.add(String.join(GlobalConstant.SYMBOL_SPACE, arguments));
             return this;
         }
 
         public String build() {
-            return String.join(" ", command);
+            return String.join(GlobalConstant.SYMBOL_SPACE, command);
         }
     }
 
