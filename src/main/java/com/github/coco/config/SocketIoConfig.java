@@ -26,6 +26,12 @@ public class SocketIoConfig {
     @Value("${socketio.port}")
     private Integer port;
 
+    @Value("${socketio.maxFramePayloadLength}")
+    private int maxFramePayloadLength;
+
+    @Value("${socketio.maxHttpContentLength}")
+    private int maxHttpContentLength;
+
     @Value("${socketio.bossCount}")
     private int bossCount;
 
@@ -53,6 +59,8 @@ public class SocketIoConfig {
         config.setSocketConfig(socketConfig);
         config.setHostname(host);
         config.setPort(port);
+        config.setMaxFramePayloadLength(maxFramePayloadLength);
+        config.setMaxHttpContentLength(maxHttpContentLength);
         config.setBossThreads(bossCount);
         config.setWorkerThreads(workCount);
         config.setAllowCustomRequests(allowCustomRequests);
