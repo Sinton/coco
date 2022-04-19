@@ -11,35 +11,35 @@ public class DateHelper {
     /**
      * 一纳米
      */
-    public static final long NANOSECOND  = 1L;
+    public static final long NANOSECOND         = 1L;
     /**
      * 一微秒
      */
-    public static final long MICROSECOND = NANOSECOND * 1000L;
+    public static final long MICROSECOND        = NANOSECOND * 1000L;
     /**
      * 一毫秒
      */
-    public static final long MILLISECOND = MICROSECOND * 1000L;
+    public static final long MILLISECOND        = MICROSECOND * 1000L;
     /**
      * 一秒钟
      */
-    public static final long SECOND      = MILLISECOND * 1000L;
+    public static final long SECOND             = MILLISECOND * 1000L;
     /**
      * 一分钟
      */
-    public static final long MINUTE      = SECOND * 60L;
+    public static final long MINUTE             = SECOND * 60L;
     /**
      * 一小时
      */
-    public static final long HOUR        = MINUTE * 60L;
+    public static final long HOUR               = MINUTE * 60L;
     /**
      * 一天
      */
-    public static final long DAY         = HOUR * 24L;
+    public static final long DAY                = HOUR * 24L;
     /**
      * 纳米时间单位
      */
-    public static final String NANOSECOND_UNIT = "ns";
+    public static final String NANOSECOND_UNIT  = "ns";
     /**
      * 微秒时间单位
      */
@@ -51,15 +51,15 @@ public class DateHelper {
     /**
      * 秒钟时间单位
      */
-    public static final String SECOND_UNIT = "s";
+    public static final String SECOND_UNIT      = "s";
     /**
      * 分钟时间单位
      */
-    public static final String MINUTE_UNIT = "m";
+    public static final String MINUTE_UNIT      = "m";
     /**
      * 小时时间单位
      */
-    public static final String HOUR_UNIT = "h";
+    public static final String HOUR_UNIT        = "h";
 
     /**
      * 获取时间单位
@@ -94,23 +94,17 @@ public class DateHelper {
     public static long getNanosTimeByUnit(String str) {
         switch (DateHelper.getTimeUnit(str)) {
             case DateHelper.NANOSECOND_UNIT:
-                return TimeUnit.NANOSECONDS.toNanos(Long.parseLong(StringUtils.removeEnd(str,
-                                                                                         DateHelper.NANOSECOND_UNIT)));
+                return TimeUnit.NANOSECONDS.toNanos(Long.parseLong(StringUtils.removeEnd(str, DateHelper.NANOSECOND_UNIT)));
             case DateHelper.MICROSECOND_UNIT:
-                return TimeUnit.MICROSECONDS.toNanos(Long.parseLong(StringUtils.removeEnd(str,
-                                                                                          DateHelper.MICROSECOND_UNIT)));
+                return TimeUnit.MICROSECONDS.toNanos(Long.parseLong(StringUtils.removeEnd(str, DateHelper.MICROSECOND_UNIT)));
             case DateHelper.MILLISECOND_UNIT:
-                return TimeUnit.MILLISECONDS.toNanos(Long.parseLong(StringUtils.removeEnd(str,
-                                                                                          DateHelper.MILLISECOND_UNIT)));
+                return TimeUnit.MILLISECONDS.toNanos(Long.parseLong(StringUtils.removeEnd(str, DateHelper.MILLISECOND_UNIT)));
             case DateHelper.SECOND_UNIT:
-                return TimeUnit.SECONDS.toNanos(Long.parseLong(StringUtils.removeEnd(str,
-                                                                                     DateHelper.SECOND_UNIT)));
+                return TimeUnit.SECONDS.toNanos(Long.parseLong(StringUtils.removeEnd(str, DateHelper.SECOND_UNIT)));
             case DateHelper.MINUTE_UNIT:
-                return TimeUnit.MINUTES.toNanos(Long.parseLong(StringUtils.removeEnd(str,
-                                                                                     DateHelper.MINUTE_UNIT)));
+                return TimeUnit.MINUTES.toNanos(Long.parseLong(StringUtils.removeEnd(str, DateHelper.MINUTE_UNIT)));
             case DateHelper.HOUR_UNIT:
-                return TimeUnit.HOURS.toNanos(Long.parseLong(StringUtils.removeEnd(str,
-                                                                                   DateHelper.HOUR_UNIT)));
+                return TimeUnit.HOURS.toNanos(Long.parseLong(StringUtils.removeEnd(str, DateHelper.HOUR_UNIT)));
             default:
                 return 0L;
         }
