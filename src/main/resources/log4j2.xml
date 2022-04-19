@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<configuration status="WARN" packages="org.apache.logging.log4j.core.pattern">
+<configuration monitorInterval="5" status="WARN" packages="org.apache.logging.log4j.core.pattern">
     <properties>
         <!-- 文件输出格式 -->
         <property name="PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} |-%-5level [%thread] %c [%L] -| %msg%n</property>
