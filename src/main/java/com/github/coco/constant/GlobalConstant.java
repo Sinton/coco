@@ -10,6 +10,11 @@ public class GlobalConstant {
     public static final int SUCCESS_CODE             = 2000;
 
     /**
+     * 空格
+     */
+    public static final String SYMBOL_SPACE          = ":";
+
+    /**
      * 冒号
      */
     public static final String SYMBOL_MARK_COLON     = ":";
