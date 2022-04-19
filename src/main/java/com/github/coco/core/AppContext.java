@@ -1,13 +1,16 @@
 package com.github.coco.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.stereotype.Component;
 
 /**
  * @author Yan
  */
+@Slf4j
 @Component
 public class AppContext implements ApplicationContextAware {
     private static ApplicationContext applicationContext;
@@ -15,6 +18,10 @@ public class AppContext implements ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         AppContext.applicationContext = applicationContext;
+    }
+
+    public static void publishEvent(ApplicationEvent applicationEvent) {
+        applicationContext.publishEvent(applicationEvent);
     }
 
     /**
