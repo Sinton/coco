@@ -9,9 +9,11 @@ import com.github.coco.constant.GlobalConstant;
 import com.github.coco.constant.dict.EndpointStatusEnum;
 import com.github.coco.constant.dict.EndpointTypeEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
+import com.github.coco.core.AppContext;
 import com.github.coco.entity.Endpoint;
 import com.github.coco.schedule.SyncEndpointTask;
 import com.github.coco.service.EndpointService;
+import com.github.coco.utils.ConfigHelper;
 import com.github.coco.utils.docker.DockerConnectorHelper;
 import com.github.coco.utils.RuntimeContextHelper;
 import com.github.coco.utils.ThreadPoolHelper;
@@ -37,9 +39,6 @@ import java.util.Objects;
 public class EndpointController extends BaseController {
     @Resource
     private EndpointService endpointService;
-
-    @Resource
-    private SyncEndpointTask syncEndpointTask;
 
     @WebLog
     @PostMapping("/create")
@@ -67,7 +66,11 @@ public class EndpointController extends BaseController {
                 endpoint = endpointBuilder.build();
                 endpointService.createEndpoint(endpoint);
                 // 异步更新服务终端信息
-                ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE).execute(() -> syncEndpointTask.syncEndpoints());
+                boolean enable = ConfigHelper.getProperty("coco.sync-data.endpoint.enable", Boolean.TYPE);
+                if (enable) {
+                    SyncEndpointTask syncEndpointTask = AppContext.getBean(SyncEndpointTask.class);
+                    ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE).execute(syncEndpointTask::syncEndpoints);
+                }
                 return apiResponseDTO.returnResult(GlobalConstant.SUCCESS_CODE, endpointService.getEndpoint(endpoint));
             } catch (Exception e) {
                 log.error("创建终端服务发生异常", e);

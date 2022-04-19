@@ -10,13 +10,15 @@ import com.github.coco.constant.dict.EndpointTypeEnum;
 import com.github.coco.constant.dict.ErrorCodeEnum;
 import com.github.coco.constant.dict.StackTypeEnum;
 import com.github.coco.constant.dict.WhetherEnum;
+import com.github.coco.core.AppContext;
 import com.github.coco.entity.Stack;
 import com.github.coco.schedule.SyncStackTask;
 import com.github.coco.service.StackService;
-import com.github.coco.utils.docker.DockerComposeHelper;
-import com.github.coco.utils.docker.DockerStackHelper;
+import com.github.coco.utils.ConfigHelper;
 import com.github.coco.utils.EnumHelper;
 import com.github.coco.utils.ThreadPoolHelper;
+import com.github.coco.utils.docker.DockerComposeHelper;
+import com.github.coco.utils.docker.DockerStackHelper;
 import com.spotify.docker.client.exceptions.DockerException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -47,9 +49,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class StackController extends BaseController {
     @Resource
     private StackService stackService;
-
-    @Resource
-    private SyncStackTask syncStackTask;
 
     @WebLog
     @PostMapping("/create")
@@ -202,8 +201,12 @@ public class StackController extends BaseController {
     @PostMapping("/list")
     public Map<String, Object> getPageStacks(@RequestBody Map<String, Object> params) {
         // 异步更新应用栈
-        ThreadPoolExecutor threadPool = ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE);
-        threadPool.submit(() -> syncStackTask.syncStacks());
+        boolean enable = ConfigHelper.getProperty("coco.sync-data.stack.enable", Boolean.TYPE);
+        if (enable) {
+            SyncStackTask syncStackTask = AppContext.getBean(SyncStackTask.class);
+            ThreadPoolExecutor threadPool = ThreadPoolHelper.provideThreadPool(ThreadPoolHelper.ProvideModeEnum.SINGLE);
+            threadPool.submit(syncStackTask::syncStacks);
+        }
 
         int pageNo = Integer.parseInt(Objects.toString(params.get("pageNo"), String.valueOf(DbConstant.PAGE_NO)));
         int pageSize = Integer.parseInt(Objects.toString(params.get("pageSize"), String.valueOf(DbConstant.PAGE_SIZE)));

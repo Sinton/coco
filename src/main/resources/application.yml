@@ -1,12 +1,18 @@
+#============================================================================
+# WebServer
+#============================================================================
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    application-display-name: coco
+  compression:
+    enabled: true
+
+#============================================================================
+# Spring
+#============================================================================
 spring:
-  profiles:
-    active: dev
-  mvc:
-    static-path-pattern: /**
-    # 默认值为 classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
-    view:
-      #prefix: /views/
-      suffix: .html
   servlet:
     multipart:
       max-file-size: -1
@@ -30,16 +36,6 @@ spring:
       maximum-pool-size: 15
       idle-timeout: 60000
 
-server:
-  compression:
-    enabled: true
-  port: 8080
-  tomcat:
-    uri-encoding: UTF-8
-  servlet:
-    context-path: /
-    application-display-name: coco
-
 #============================================================================
 # Mybatis
 #============================================================================
@@ -51,7 +47,7 @@ mybatis:
   type-aliases-package: com.github.coco.entity
 
 #============================================================================
-# Netty Socket-IO
+# Socket.IO
 #============================================================================
 socketio:
   host: 0.0.0.0
@@ -71,13 +67,16 @@ socketio:
   # Ping消息间隔（毫秒），默认25秒。客户端向服务器发送一条心跳消息间隔
   pingInterval: 25000
 
+#============================================================================
+# Coco
+#============================================================================
 coco:
   sync-data:
     stack:
       enable: true
       # 应用栈数据同步时间间隔（默认30秒）
-      stack-interval: 30000
+      interval: 30000
     endpoint:
       enable: true
       # 服务终端数据同步时间间隔（默认30秒）
-      endpoint-interval: 30000
+      interval: 30000

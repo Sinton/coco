@@ -7,14 +7,14 @@ import com.github.coco.constant.dict.EndpointStatusEnum;
 import com.github.coco.entity.Stack;
 import com.github.coco.service.EndpointService;
 import com.github.coco.service.StackService;
-import com.github.coco.utils.docker.DockerConnectorHelper;
 import com.github.coco.utils.StringHelper;
+import com.github.coco.utils.docker.DockerConnectorHelper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Image;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -28,7 +28,7 @@ import java.util.Objects;
  */
 @Slf4j
 @Component
-@ConditionalOnExpression("${coco.sync-data.endpoint.enable}")
+@ConditionalOnProperty("coco.sync-data.endpoint.enable")
 public class SyncEndpointTask {
     @Resource
     private EndpointService endpointService;
@@ -36,7 +36,7 @@ public class SyncEndpointTask {
     @Resource
     private StackService stackService;
 
-    @Scheduled(fixedDelayString = "${coco.sync-data.endpoint.endpoint-interval}")
+    @Scheduled(fixedDelayString = "${coco.sync-data.endpoint.interval}")
     public void syncEndpoints() {
         int endpointTotal = endpointService.getEndpointTotal();
         endpointService.getEndpoints(DbConstant.PAGE_NO, endpointTotal).forEach(endpoint -> {
